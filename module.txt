@@ -1,0 +1,3495 @@
+Option Explicit
+#If VBA7 Then
+Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
+#Else
+Private Declare Sub Sleep Lib "kernel32" (ByVal ms As Long)
+#End If
+
+
+Sub パワーシェル実行()
+
+Dim Cmd As String
+Dim ResultStr As String
+Dim path As String
+Dim dateTime As String
+Dim lastDateTime As String
+Dim o As Object
+Dim resultArr() As String
+Dim i As Integer
+Dim tmpArr As Variant
+Dim counter As Integer
+Dim endnum As Integer
+
+
+'特定期日以降のファイルを抽出するディレクトリ
+path = Cells(2, 5)
+'特定期日
+dateTime = Cells(2, 6)
+lastDateTime = Cells(4, 6)
+If (lastDateTime <> "" And IsDate(lastDateTime)) Then
+ lastDateTime = "-and ($_.lastwritetime -lt [Datetime]\""" & lastDateTime & "\"")"
+Else
+ lastDateTime = ""
+End If
+
+Call clearRow(1, 1)
+Call clearRow(1, 2)
+
+If (path <> "" And dateTime <> "") Then
+ If (IsDate(dateTime)) Then
+    Cmd = """get-childitem -Path " & path & " -Include *.html,*.png,*.jpg,*.css,*.pdf,*.js,*.json,*.php -Recurse | where {($_.lastwritetime -gt [Datetime]\""" & dateTime & "\"")" & lastDateTime & " } | select -expandproperty Fullname"""
+    ResultStr = ExecCommand(Cmd)
+    resultArr = Split(ResultStr, vbCrLf)
+
+    tmpArr = resultArr
+    counter = 1
+    For i = LBound(tmpArr) To UBound(tmpArr) Step 1
+      If (tmpArr(i) <> "" And InStr(tmpArr(i), "FullName") = 0 And InStr(tmpArr(i), "--------") = 0) Then
+          Cells(counter, 1) = tmpArr(i)
+          counter = counter + 1
+      End If
+    Next i
+    For i = 1 To counter Step 1
+        Cells(i, 2) = Replace(Cells(i, 1), path, path & "\archive")
+    Next i
+
+ Else
+    MsgBox "正しい日付を入力してください"
+ End If
+
+Else
+MsgBox "ファイルパスと日時を設定してください。"
+
+End If
+
+End Sub
+
+Sub makeHtml()
+Dim buf As String, file1 As String, file2 As String, endnum As Integer, path As String, startnum As Integer, book As String, id As String, colkey As String, colval As String, size As String, item As String, savefilename As String
+Dim addtxt As String
+
+path = "C:\Users\USERNAME\Desktop\work\xxxx\140325_購入ページ\html2" & "\"
+startnum = 2
+endnum = Cells(Rows.count, 5).End(xlUp).Row
+file1 = getFile(Cells(2, 9))
+file2 = getFile(Cells(2, 10))
+
+
+For i = startnum To endnum
+    If Cells(i, 5) <> "" Then
+    buf = file1
+    item = Cells(i, 1)
+    book = Cells(i, 5)
+    id = Cells(i, 6)
+    colkey = Cells(i, 2)
+    colval = Cells(i, 3)
+    size = Cells(i, 4)
+    addtxt = Cells(i, 8)
+    savefilename = Cells(i, 7)
+    buf = buf & isNewline(False)
+    buf = buf & item & isNewline(False)
+    buf = buf & "<form action=""/scripts/m/NissenOrdOrder.asp"">" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""f"" value=""4""> <input type=""hidden"" name=""cms"" value=""999""> <input type=""hidden"" name=""dFlg"" value=""1""> <input type=""hidden"" name=""uid"" value=""NULLGWDOCOMO"">" & isNewline(False)
+   ' buf = buf & "<input type=""hidden"" name=""f"" value=""4"">" & isNewline(False)
+   ' buf = buf & "<input type=""hidden"" name=""cms"" value=""999"">" & isNewline(False)
+   ' buf = buf & "<input type=""hidden"" name=""dFlg"" value=""1"">" & isNewline(False)
+   ' buf = buf & "<input type=""hidden"" name=""uid"" value=""NULLGWDOCOMO"">" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""cno"" value="""
+    buf = buf & book & """>" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""ino"" value="""
+    buf = buf & id & """>" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""RtnSiz"" value=""/all/event/PL14SPHLA/" & savefilename & ".asp"">" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""RtnCls"" value=""/all/event/PL14SPHLA/" & savefilename & ".asp"">" & isNewline(False)
+    buf = buf & "<input type=""hidden"" name=""AdCart"" value=""/all/event/PL14SPHLA/" & savefilename & ".asp"">" & isNewline(False)
+
+    If (colkey <> "") Then
+    buf = buf & "<!-- ここからプルダウン項目エリア -->" & isNewline(False)
+buf = buf & "<!--セレクトタグは必ずx:rawで囲んでください" & isNewline(False)
+buf = buf & "プルダウン項目の最初は必ず選択済み（selected）にしてください" & isNewline(False)
+buf = buf & "-->" & isNewline(False)
+buf = buf & "<x:raw>" & isNewline(False)
+buf = buf & "<!-- 色変数名：cbn -->" & isNewline(False)
+buf = buf & "<span style=""color:#000000;"">▼</span>色(ﾀｲﾌﾟ):<br />" & isNewline(False)
+buf = buf & "<select name=""cbn"">" & isNewline(False)
+buf = buf & "<!-- valueに色記号を入れてください -->" & isNewline(False)
+buf = buf & "<option value=""" & colkey & """ selected>" & isNewline(False)
+buf = buf & colkey & colval & isNewline(False)
+buf = buf & "</option>" & isNewline(False)
+buf = buf & "</select>" & isNewline(False)
+buf = buf & "</x:raw>" & isNewline(False)
+buf = buf & "<br>" & isNewline(False)
+End If
+If (size <> "") Then
+buf = buf & "<x:raw>" & isNewline(False)
+buf = buf & "<span style=""color:#000000;"">▼</span>ｻｲｽﾞ:<br />" & isNewline(False)
+buf = buf & "<select name=""sbn"">" & isNewline(False)
+buf = buf & "<!-- valueにサイズ記号を入れてください -->" & isNewline(False)
+buf = buf & "<option value=""" & size & """ selected>" & isNewline(False)
+buf = buf & size & isNewline(False)
+buf = buf & "</option>" & isNewline(False)
+buf = buf & "</select>" & isNewline(False)
+buf = buf & "</x:raw>" & isNewline(False)
+
+buf = buf & "<br>" & isNewline(False)
+'buf = buf & "<input type=""hidden"" name=""sbn"" value=""" & size & """>" & isNewline(False)
+
+    End If
+    If (addtxt <> "") Then
+    buf = buf & addtxt
+    End If
+
+    buf = buf & isNewline(False) & file2
+    Call fileoutput(path & savefilename & ".htm", FreeFile, buf)
+    End If
+Next
+
+
+'Cells(3, 3).Value = buf
+
+
+End Sub
+
+
+
+Sub makeMapArea()
+    Dim html As String, wraptag As String, imgsrc As String, imgtag As String, an As String, target As String, compress As Boolean, endnum As Integer, startnum As Integer, count As Integer, size As Variant
+    startnum = 2
+    count = IIf(Cells(12, 5) <> "", Cells(12, 5), 1)
+    endnum = Cells(Rows.count, 2).End(xlUp).Row
+    an = Cells(6, 5).Value
+    compress = Cells(4, 5).Value
+    size = Split(Cells(2, 5), "x")
+    target = Cells(8, 5).Value
+    imgsrc = Cells(10, 5).Value
+
+    For i = startnum To endnum
+    If Cells(i, 1) <> "" Then
+        Dim endlist As Integer, endtag As String
+        If imgsrc <> "" Then
+        imgtag = "<img src=""" & imgsrc & count & ".jpg"" width=""" & size(0) & """ height=""" & size(1) & """ border=""0"" usemap=""#Map" & count & """ />"
+        Else
+        imgtag = ""
+        End If
+        endlist = getRunMaxRow(Int(i), 2)
+        wraptag = IIf(Cells(i, 1).Value <> "<>", Cells(i, 1), "")
+        html = html & "<!--" & textFormat(str(count), "00") & "-->" & isNewline(compress) & wraptag & isNewline(compress) & imgtag & isNewline(compress) & "" & "<map name=""Map" & count & """>" & isNewline(compress)
+        For m = i To endlist
+           html = html & getareatag(Cells(m, 2), Cells(m, 3), an & "_" & textFormat(str(count), "00") & """", Cells(m, 4), target)
+        Next
+        html = html & "</map>" & getendtag(wraptag) & isNewline(compress)
+        count = count + 1
+    End If
+    Next
+
+    Call fileoutput("list.html", FreeFile, html)
+
+End Sub
+
+
+Sub makeItemlist()
+    Dim endnum As Integer, html As String, number As Integer, cg As String
+    cg = Cells(2, 5)
+    endnum = Cells(Rows.count, 2).End(xlUp).Row
+    number = 1
+    html = "<?php " & vbNewLine
+    Cells(2, 2).Value = "samples"
+    html = html & "$itemlist[] = 'cd=samples'; "
+    Cells(2, 3).Value = "$itemlist[] = 'cd=samples'; $item00 = 'samples';  //#00"
+    html = html & "$item00 = 'samples';  //#00" & vbNewLine
+    Cells(2, 1) = "00"
+
+    For i = 3 To endnum - 1 Step 1
+        For j = i + 1 To endnum Step 1
+            If Cells(i, 2) = Cells(j, 2) Then
+                Rows(j).Delete
+                j = j - 1
+                endnum = endnum - 1
+            End If
+        Next
+    Next
+
+    For k = 3 To endnum Step 1
+        Cells(k, 3).Value = getvar(Cells(k, 2), number, cg)
+        html = html & Cells(k, 3).Value & vbNewLine
+        Cells(k, 1).Value = textFormat(CStr(number), "00")
+        number = number + 1
+    Next
+    html = html & "?>"
+    Call fileoutput("itemlist.inc", FreeFile, html)
+
+
+End Sub
+
+Sub stylingHTML()
+    Dim html As String, buf As String, endnum As Integer, id As String, col As String, text As String, day As String, no As String, mode As Boolean, linklist As Variant, itemlist As Variant, count As Integer, listbuf As String, listbuf2 As String, item As String, RE As Object
+
+    mode = Cells(2, 8)
+    endnum = Cells(Rows.count, 3).End(xlUp).Row
+    count = 0
+    Set itemlist = CreateObject("Scripting.Dictionary")
+
+    '--------------------------------既存データ読み込み
+    Set RE = CreateObject("VBScript.RegExp")
+    RE.Global = True
+    RE.pattern = "';.+"
+    listbuf2 = fileload(getfilepath("load\itemlist.inc"))
+    listbuf2 = Replace(listbuf2, "$itemlist[] = 'cd=", "")
+    listbuf2 = Replace(listbuf2, "<?php", "")
+    listbuf2 = Replace(listbuf2, "?>", "")
+    listbuf2 = RE.Replace(listbuf2, "")
+    listbuf2 = trimStr(listbuf2)
+
+    linklist = Split(listbuf2, ",")
+    Set RE = Nothing
+    listbuf2 = ""
+
+    For n = 0 To UBound(linklist)
+
+    If Not itemlist.Exists(linklist(n)) Then
+        itemlist.add linklist(n), linklist(n)
+        listbuf2 = listbuf2 & "$itemlist[] = 'cd=" & linklist(n) & "'; $item" & textFormat(str(count), "00") & " = '" & Replace(linklist(n), "&cl=", "-") & "';  //#" & textFormat(str(count), "00") & vbNewLine
+        count = count + 1
+    End If
+
+    Next
+
+'-------------------------------------------------------
+
+    listbuf = "$itemlist[] = 'cd=samples'; $item00 = 'samples';  //#00" & vbNewLine
+    For i = 2 To endnum Step 1
+        Dim startlist As Integer, endlist As Integer
+
+    If Cells(i, 1).Value <> "" Then
+
+        no = textFormat(Cells(i, 1).Value, "00")
+        startlist = i
+        endlist = getRunMaxRow(startlist, 3)
+        day = Cells(startlist, 2)
+
+        For m = startlist To endlist Step 1
+        If m = startlist Then
+        html = html & "<!--#" & day & "-" & no & "--><div class=""credittext update2013" & day & "_" & no & """ style=""display:none;"">" & isNewline(mode)
+        End If
+
+        'ループ生成開始--------------
+        text = UCase(Cells(m, 6))
+        id = Cells(m, 4)
+        col = Cells(m, 5)
+        item = Cells(m, 3)
+        If Not itemlist.Exists(item) And Replace(LCase(id), " ", "") <> "shoponly" Then
+             itemlist.add item, item
+             'listbuf = listbuf & "$itemlist[] = 'cd=" & item & "'; $item" & textFormat(CStr(count), "00") & " = '" & Replace(item, "&cl=", "-") & "';  //#" & textFormat(CStr(count), "00") & vbNewLine
+             listbuf2 = listbuf2 & "$itemlist[] = 'cd=" & item & "'; $item" & textFormat(CStr(count), "00") & " = '" & Replace(item, "&cl=", "-") & "';  //#" & textFormat(CStr(count), "00") & vbNewLine
+             count = count + 1
+        End If
+        If col <> "" Then
+        col = "-" & col
+        End If
+        If Cells(m, 7) <> "" Then
+        buf = buf & Cells(m, 7)
+        End If
+
+        html = html & getStylingLink(id, text, col) & isNewline(mode)
+
+        'ループ生成終了--------------
+        If m = endlist Then
+        html = html & getCaption(buf)
+        html = html & "</div>" & isNewline(mode) & isNewline(mode)
+        buf = ""
+        End If
+        '--------------------------------
+        Next
+
+        End If
+
+    Next
+    Set itemlist = Nothing
+    Call fileoutput("styling.html", FreeFile, html)
+    html = "<?php" & vbNewLine
+    html = html & listbuf2 & "?>"
+    Call fileoutput("itemlist.inc", FreeFile, html)
+
+End Sub
+
+
+Public Sub fileoutput(fname As String, fno As Integer, data As String)
+
+    If InStr(fname, ":") = 0 Then
+    fname = getfilepath(fname)
+    End If
+    Open fname For Output As fno
+    Print #fno, data
+    Close #fno
+End Sub
+
+Public Sub fileoutput_ENCODE(fname As String, fno As Integer, data As String, Optional code As String = "Shift_JIS")
+    Dim outStream As Object
+
+    If (fname <> "") Then
+
+    If InStr(fname, ":") = 0 Then
+    fname = getfilepath(fname)
+    End If
+
+
+    Set outStream = CreateObject("ADODB.Stream")
+    outStream.Type = 2
+    outStream.Charset = code
+    outStream.Open
+    outStream.WriteText data, 0
+    outStream.SaveToFile fname, 2
+
+    outStream.Close
+    Set outStream = Nothing
+
+    End If
+
+End Sub
+
+Public Sub fileoutput_fullpath(fname As String, fno As Integer, data As String)
+    Open fname For Output As fno
+    Print #fno, data
+    Close #fno
+End Sub
+
+Public Function fileload(fname As String) As String
+    Dim fno As Integer, buf As String, tmp As Variant, o, ts As Object
+    Set o = CreateObject("Scripting.FileSystemObject")
+    Set ts = o.OpenTextFile(fname)
+    buf = ts.ReadAll
+    fileload = buf
+    Set o = Nothing
+    Set ts = Nothing
+End Function
+
+Sub mailArea()
+    Dim html As String, last As Integer, souce As String
+    last = Cells(Rows.count, 1).End(xlUp).Row
+
+    Call clearRow(last + 1, 3)
+    html = "<map name=""Map1"">"
+    For i = 3 To last Step 1
+        Dim tmp As String, link As String
+        link = deleteStr(Cells(i, 2).Value)
+        tmp = getLCBLink(link) & getquerystr(link)
+
+        html = html & Replace(Cells(i, 1).Value, "#"">", "") & tmp & "utm_campaign=" & Cells(3, 4).Value & "&utm_medium=email&utm_source=pc-newsletter"">"
+        souce = souce & html & vbNewLine
+        If i = last Then
+        html = html & "</map>"
+        souce = souce & "</map>"
+        End If
+        Cells(i, 3).Value = html
+        html = ""
+    Next
+    Call fileoutput("mail.html", FreeFile, souce)
+
+End Sub
+
+Sub pickupJs()
+    Dim s As String, last As Long, path As String
+    last = Cells(Rows.count, 1).End(xlUp).Row
+    For i = 4 To last Step 1
+        path = Cells(i, 1)
+        s = "{link:'" & getLCBPHPLink(deleteStr(path)) & getquerystr(path) & "ref=top_pickup',alt:'" & Cells(i, 2) & "'}"
+        If i <> last Then
+        s = s & ","
+        End If
+        Cells(i, 3).Value = s
+    Next
+    s = ""
+    For m = 4 To getEndRow(4, 3)
+            s = s & Cells(m, 3)
+    Next m
+    Call fileoutput("pickup.txt", FreeFile, s)
+
+End Sub
+
+Sub makelistbutton()
+    Dim raptag As String, prop As String, size As Variant, smpsize As Variant, blank As String, endnum As Integer, html As String, smphtml As String, title As String, tmp As String, num As Integer, imgpath As String, imgname As String, smpimgpath As String
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    num = IIf(Cells(6, 4) <> "", Cells(6, 4), 1)
+    imgname = Cells(2, 4)
+    imgpath = Cells(4, 4)
+    smpimgpath = Cells(16, 4)
+    size = IIf(Cells(10, 4) <> "", Split(Cells(10, 4), "x"), Split("100x100", "x"))
+    smpsize = IIf(Cells(12, 4) <> "", Split(Cells(12, 4), "x"), Split("100x100", "x"))
+    prop = Cells(14, 4)
+    brank = IIf(Cells(8, 4) <> "", Cells(8, 4), " target =""_blank"" ")
+    For i = 2 To endnum Step 1
+    tmp = Cells(i, 2).Value
+    title = IIf(Cells(i, 3) <> "", Cells(i, 3), "ITEM")
+    raptag = Cells(i, 1)
+
+    html = html & raptag & "<a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & prop & """ title=""" & title & """" & blank & "><img alt="""" src=""" & imgpath & imgname & num & ".jpg"" width=""" & size(0) & """ height=""" & size(1) & """ border=""0""></a>" & getendtag(raptag)
+    smphtml = smphtml & raptag & "<a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & prop & """ title=""" & title & """" & blank & "><img alt="""" src=""" & smpimgpath & imgname & num & ".jpg"" width=""" & smpsize(0) & """ height=""" & smpsize(1) & """ border=""0""></a>" & getendtag(raptag)
+    num = num + 1
+    Next
+    Cells(2, 5).Value = html
+    Cells(2, 6).Value = smphtml
+End Sub
+
+Sub maketopic1()
+    Dim endnum As Integer, html As String, smphtml As String, title As String, tmp As String, num As Integer, topicnum As String
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    num = 1
+    topicnum = Cells(2, 6)
+    If topicnum = "" Then
+        topicnum = 1
+    End If
+    For i = 2 To endnum Step 1
+    tmp = deleteStr(Cells(i, 1).Value)
+    title = "ITEM"
+    If Cells(i, 3) <> "" Then
+    title = Cells(i, 3).Value
+    End If
+    html = html & "<li><a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & "ref=top_subbanar"" title=""" & title & """><img alt="""" src="" <?php echo $ic_newitem_img;?>/screen/main/" & textFormat(Cells(i, 2).Value, "0000") & "/topic" & topicnum & "_" & num & ".jpg"" width=""257"" height=""163"" border=""0""></a></li>"
+    smphtml = smphtml & "<li><a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & "ref=top_subbanar"" title=""" & title & """><img alt="""" src="" <?php echo $ic_newitem_img;?>/screen/main/" & textFormat(Cells(i, 2).Value, "0000") & "/smp/topic" & topicnum & "_" & num & ".jpg"" width=""320"" height=""203"" border=""0""></a></li>"
+    num = num + 1
+    Next
+    Cells(2, 4).Value = html
+    Cells(2, 5).Value = smphtml
+End Sub
+
+Sub makesaletopic1()
+    Dim endnum As Integer, html As String, smphtml As String, title As String, tmp As String, num As Integer
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    num = 1
+    For i = 2 To endnum Step 1
+    tmp = Cells(i, 1).Value
+    title = "ITEM"
+    If Cells(i, 3) <> "" Then
+    title = Cells(i, 3).Value
+    End If
+    html = html & "<li><a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & "ref=top_2013ssmem_subbanar"" title=""" & title & """><img alt="""" src="" <?php echo $ic_newitem_img;?>/" & textFormat(Cells(i, 2).Value, "0000") & "/topic1_" & num & ".jpg"" width=""257"" height=""163"" border=""0""></a></li>"
+    smphtml = smphtml & "<li><a href=""" & getLCBPHPLink(tmp) & getquerystr(tmp) & "ref=top_2013ssmem_subbanar"" title=""" & title & """><img alt="""" src="" <?php echo $ic_newitem_img;?>/" & textFormat(Cells(i, 2).Value, "0000") & "/smp/topic1_" & num & ".jpg"" width=""320"" height=""203"" border=""0""></a></li>"
+    num = num + 1
+    Next
+    Cells(2, 4).Value = html
+    Cells(2, 5).Value = smphtml
+End Sub
+
+Sub margeColorLink()
+    Dim endnum As Long
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    For i = 1 To endnum Step 1
+        Dim RE As Object
+        Set RE = CreateObject("VBScript.RegExp")
+        RE.pattern = アルファベット() & "|" & 数字() & "|" & "参考商品"
+        If RE.Test(Cells(i, 1).Value) Then
+            Dim col As String
+            col = ""
+            If Cells(i, 2).Value <> "" Then
+                col = "&cl=" & Cells(i, 2).Value
+            End If
+            Cells(i, 3).Value = "'" & Cells(i, 1).Value & col
+            If i = endnum Then
+                Call clearRow(i + 1, 3)
+            End If
+        Else
+            Cells(i, 3).Value = ""
+        End If
+    Next
+        Set RE = Nothing
+End Sub
+
+Sub convertMainHTML()
+    Dim endnum As Long, html As String, smphtml As String, path As String, fno As Integer
+
+    'Dim tag As String
+    'Dim day As String
+    'day = Application.WorksheetFunction.text(Cells(3, 10).Value, "0000")
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    html = html & "<ul class=""main"" style=""overflow:hidden;width:958px;height:577px;"">"
+    smphtml = "<ul class=""mainIMG"" style=""height:259px;overflow:hidden;"">"
+
+    Call clearRow(4, 6)
+    Call clearRow(4, 7)
+
+    For i = 4 To endnum
+        If Cells(i, 1).Value <> "" Then
+            Dim atag As String
+            Dim alt_title As String
+            alt_title = Cells(i, 5).Value
+            atag = Cells(i, 2)
+            html = html & "<li style=""display:none;"">"
+            smphtml = smphtml & "<li>"
+
+                If atag <> "" Then
+                atag = getatag(atag, alt_title)
+                html = html & atag
+                smphtml = smphtml & atag
+                End If
+
+
+            html = html & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/" & Cells(i, 4).Value & ".jpg""  width=""693"" height=""561"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+            smphtml = smphtml & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/smp/" & Cells(i, 4).Value & ".jpg""  width=""320"" height=""259"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+
+        End If
+    Next
+    html = html & "</ul>"
+    smphtml = smphtml & "</ul>"
+
+    Cells(4, 6).Value = html
+    Cells(4, 7).Value = smphtml
+
+    path = getfilepath("pc.html")
+    fno = FreeFile
+    Open path For Output As #fno
+    Print #fno, html
+    'For m = 1 To getEndRow(1, 1)
+     '       tmp = Cells(m, 1)
+     '   Print #fno, tmp
+    'Next m
+    Close #fno
+    path = getfilepath("smp.html")
+    Open path For Output As #fno
+    Print #fno, smphtml
+    Close #fno
+End Sub
+
+Sub newMainHTML()
+    Dim endnum As Long, html As String, smphtml As String
+
+    'Dim tag As String
+    'Dim day As String
+    'day = Application.WorksheetFunction.text(Cells(3, 10).Value, "0000")
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    html = html & "<ul class=""main"" style=""overflow:hidden;width:958px;height:577px;"">"
+    smphtml = "<ul class=""mainIMG"" style=""height:259px;overflow:hidden;"">"
+
+    Call clearRow(4, 6)
+    Call clearRow(4, 7)
+
+    For i = 4 To endnum
+        If Cells(i, 1).Value <> "" Then
+            Dim atag As String
+            Dim alt_title As String
+            alt_title = Cells(i, 5).Value
+            atag = Cells(i, 2)
+            html = html & "<li style=""display:none;"">"
+            smphtml = smphtml & "<li>"
+
+                If InStr(atag, ",") > 0 Then
+
+                ElseIf atag <> "" Then
+                atag = getatag(atag, alt_title)
+                html = html & atag
+                smphtml = smphtml & atag
+                End If
+
+
+            html = html & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/" & Cells(i, 4).Value & ".jpg""  width=""693"" height=""561"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+            smphtml = smphtml & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/smp/" & Cells(i, 4).Value & ".jpg""  width=""320"" height=""259"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+
+        End If
+    Next
+    html = html & "</ul>"
+    smphtml = smphtml & "</ul>"
+
+    Cells(4, 6) = html
+    Cells(4, 7) = smphtml
+
+End Sub
+
+Sub makeJSON()
+    Dim json As String, buf As String, endnum As Integer, path As String, fno As Integer, mode As String
+    mode = Cells(2, 8).Value
+    endnum = Cells(Rows.count, 2).End(xlUp).Row
+    json = "[" & vbNewLine
+    For i = 2 To endnum Step 1
+        Dim startlist As Integer, endlist As Integer, isImg As Boolean, isHref As Boolean, imgsize As String
+        isImg = Cells(2, 6)
+        isHref = Cells(2, 7)
+        imgsize = Cells(4, 6)
+        If Cells(i, 1).Value <> "" Then
+
+            startlist = i
+            endlist = getRunMaxRow(startlist, 2)
+            For m = startlist To endlist Step 1
+            If m = startlist Then
+            json = json & "{" & vbNewLine
+            End If
+        'ループ生成開始--------------
+            'json = json & getKeyandValue("id", Cells(m, 3)) & "," & getKeyandValue("col", Cells(m, 4)) & "," & getKeyandValue("name", Cells(m, 5))
+            json = json & """" & Cells(m, 3) & """ : {" & getKeyandValue("id", Cells(m, 3)) & "," & getKeyandValue("col", Cells(m, 4)) & "," & getKeyandValue("name", Cells(m, 5))
+
+            If Cells(m, 4) <> "" And isImg Then
+            json = json & "," & getKeyandValue("src", getMainImg(Cells(m, 3), Cells(m, 4), imgsize))
+            End If
+            If isHref Then
+                If mode = "js" Then
+                    json = json & "," & getKeyandValue("href", getLCBnoprotocolLink(getColorLink(Cells(m, 3), Cells(m, 4))))
+                ElseIf mode = "php" Then
+                    json = json & "," & getKeyandValue("href", getLCBPHPLink(getColorLink(Cells(m, 3), Cells(m, 4))))
+                Else
+                    json = json & "," & getKeyandValue("href", getLCBPHPLink(getColorLink(Cells(m, 3), Cells(m, 4))))
+                End If
+            End If
+        'ループ生成終了--------------
+        If m = endlist Then
+            If m = endnum Then
+                json = json & "}" & vbNewLine & "}" & vbNewLine
+            Else
+                json = json & "}" & vbNewLine & "}" & "," & vbNewLine
+            End If
+        Else
+            json = json & "}," & vbNewLine
+        End If
+            '--------------------------------
+            Next
+
+        End If
+    Next
+    json = json & vbNewLine & "]"
+    Call fileoutput("itemlist.json", FreeFile, json)
+
+End Sub
+
+
+Sub convertsaleMainHTML()
+    Dim endnum As Long
+    Dim html As String
+    Dim smphtml As String
+    Dim path As String
+    Dim fno As Integer
+
+    'Dim tag As String
+    'Dim day As String
+    'day = Application.WorksheetFunction.text(Cells(3, 10).Value, "0000")
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    html = html & "<ul class=""main"" style=""overflow:hidden;width:958px;height:577px;"">"
+    smphtml = "<ul class=""mainIMG"" style=""height:259px;overflow:hidden;"">"
+    For i = 4 To endnum
+        If Cells(i, 1).Value <> "" Then
+            Dim atag As String
+            Dim alt_title As String
+            alt_title = Cells(i, 5).Value
+            atag = Cells(i, 2)
+            html = html & "<li style=""display:none;"">"
+            smphtml = smphtml & "<li>"
+                If atag <> "" Then
+                atag = getatag(atag, alt_title)
+                html = html & atag
+                smphtml = smphtml & atag
+                End If
+            html = html & "<img src=""<?php echo $ic_home_url ?>/brand/2013ssmem/shoptop/images/" & Cells(i, 3).Value & "/" & Cells(i, 4).Value & ".jpg""  width=""693"" height=""561"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+            smphtml = smphtml & "<img src=""<?php echo $ic_home_url ?>/brand/2013ssmem/shoptop/images/" & Cells(i, 3).Value & "/smp/" & Cells(i, 4).Value & ".jpg""  width=""320"" height=""259"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+        End If
+
+    Next
+        html = html & "</ul>"
+        smphtml = smphtml & "</ul>"
+    Cells(4, 6).Value = html
+    Cells(4, 7).Value = smphtml
+    path = getfilepath("salepc.html")
+    fno = FreeFile
+    Open path For Output As #fno
+    Print #fno, html
+    'For m = 1 To getEndRow(1, 1)
+     '       tmp = Cells(m, 1)
+     '   Print #fno, tmp
+    'Next m
+    Close #fno
+    path = getfilepath("salesmp.html")
+    Open path For Output As #fno
+    Print #fno, smphtml
+    Close #fno
+End Sub
+
+
+Sub convertnomemMainHTML()
+    Dim endnum As Long
+    Dim html As String
+    Dim smphtml As String
+    Dim path As String
+    Dim fno As Integer
+
+    'Dim tag As String
+    'Dim day As String
+    'day = Application.WorksheetFunction.text(Cells(3, 10).Value, "0000")
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    html = html & "<ul class=""main"" style=""overflow:hidden;width:423px;height:342px;"">"
+    smphtml = "<ul class=""mainIMG"" style=""height:259px;overflow:hidden;"">"
+    For i = 4 To endnum
+        If Cells(i, 1).Value <> "" Then
+            Dim atag As String
+            Dim alt_title As String
+            alt_title = Cells(i, 5).Value
+            atag = Cells(i, 2)
+            html = html & "<li style=""display:none;"">"
+            smphtml = smphtml & "<li>"
+                If atag <> "" Then
+                atag = getatag(atag, alt_title)
+                html = html & atag
+                smphtml = smphtml & atag
+                End If
+            html = html & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/" & Cells(i, 4).Value & ".jpg""  width=""423"" height=""342"" alt=""" & alt_title & """ />" & getatag() & "</li>"
+            smphtml = smphtml & "<img src=""<?php echo $ic_home_url ?>/brand/shoptop/images/screen/main/" & Cells(i, 3).Value & "/smp/" & Cells(i, 4).Value & ".jpg""  width=""320"" height=""259"" alt=""" & alt_title & """ style=""opacity: 1;"" />" & getatag() & "</li>"
+        End If
+
+    Next
+        html = html & "</ul>"
+        smphtml = smphtml & "</ul>"
+
+    Cells(4, 6).Value = html
+    Cells(4, 7).Value = smphtml
+    path = getfilepath("pc.html")
+    fno = FreeFile
+    Open path For Output As #fno
+    Print #fno, html
+    'For m = 1 To getEndRow(1, 1)
+     '       tmp = Cells(m, 1)
+     '   Print #fno, tmp
+    'Next m
+    Close #fno
+    path = getfilepath("smp.html")
+    Open path For Output As #fno
+    Print #fno, smphtml
+    Close #fno
+End Sub
+
+
+Public Sub clearRow(r As Integer, c As Integer)
+    Dim endnum As Integer, i As Integer
+
+    endnum = Cells(Rows.count, c).End(xlUp).Row
+    For i = r To endnum
+        Cells(i, c) = ""
+    Next
+End Sub
+
+
+Sub 商品名変換()
+    Dim endnum As Integer, tmp As String
+    endnum = Cells(Rows.count, 2).End(xlUp).Row
+
+    For i = 2 To endnum Step 1
+    tmp = Cells(i, 1).Value
+    If InStr(Cells(i, 2), "商品名") > 0 Then
+        Cells(i, 2).Value = ""
+    End If
+    Select Case checkStr(tmp)
+        Case "shoponly"
+            Cells(i, 3).Value = UCase(Cells(i, 2).Value) & "（SHOP ONLY）"
+        Case "comingsoon"
+            Cells(i, 3).Value = UCase(Cells(i, 2).Value) & "（COMINGSOON）"
+        Case "outlet"
+            Cells(i, 3).Value = UCase(Cells(i, 2).Value) & "（OUTLET）"
+        Case "sankou"
+            Cells(i, 3).Value = UCase(Cells(i, 2).Value)
+        Case Else
+            Cells(i, 3).Value = UCase(Cells(i, 2).Value)
+    End Select
+    Next
+
+End Sub
+
+Sub ajustURL()
+    Dim endnum As Integer, str As String
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+
+    For i = 1 To endnum
+      Cells(i, 1).Value = deleteStr(Cells(i, 1).Value)
+    Next
+
+End Sub
+
+Sub 特定の文字を含む行を削除()
+Dim i As Integer, x As Integer
+
+
+x = ActiveSheet.Cells(ActiveSheet.Rows.count, "A").End(xlUp).Row
+For i = x To 1 Step -1
+If ActiveSheet.Cells(i, "B").Value Like "*ダミーテキスト*" Then
+ActiveSheet.Rows(i).Delete
+End If
+Next
+
+End Sub
+
+Sub makeLookbook()
+    Dim html As String, buf As String, endnum As Long, day As String, id As String, col As String, name As String, stat As String, compression As Boolean, itemlist As Variant, count As Integer, item As String, listbuf As String, gid As String
+
+    compression = Cells(2, 8)
+    day = textFormat(Cells(2, 7).Value, "0000")
+    endnum = Cells(Rows.count, 2).End(xlUp).Row
+    gid = IIf(Cells(4, 7) <> "", "&wh=G&gid=" & Cells(4, 7), "")
+    count = 1
+    Set itemlist = CreateObject("Scripting.Dictionary")
+    listbuf = "$itemlist[] = 'cd=samples'; $item00 = 'samples';  //#00" & vbNewLine
+    For i = 2 To endnum Step 1
+        Dim startlist As Integer, endlist As Integer
+
+        If Cells(i, 1).Value <> "" Then
+            Dim no As String
+            no = textFormat(Cells(i, 1).Value, "00")
+            html = "<!-- ▼ #" & no & "--><div>"
+            html = html & "<a href=""<?php echo $ic_lb_img; ?>/" & day & "/lookbook" & no & ".jpg"" class=""main_photo""><img src=""<?php echo $ic_lb_img; ?>/" & day & "/lookbook" & no & "_thumb.jpg"" title=""LOOK #" & no & """ width=""90"" height=""150"" class=""thumb"" /></a>"
+            html = html & "<ul class=""desc""><!-- // LEFT ITEMS //--><h3 class=""lookbook_title""><img src=""<?php echo $ic_lb_img; ?>/common/lookbook_h3_title" & no & ".gif"" title=""LOOK #" & no & """ width=""244"" height=""52"" /></h3>"
+            startlist = i
+            endlist = getRunMaxRow(startlist, 2)
+            For m = startlist To endlist Step 1
+            'ループ1回目生成記述箇所--------------
+                name = Cells(m, 6).Value
+                Select Case Cells(2, 9).Value
+                    Case "up"
+                    name = StrConv(name, vbUpperCase)
+                    Case "low"
+                    name = StrConv(name, vbLowerCase)
+                    Case Else
+                    name = StrConv(name, vbProperCase)
+                End Select
+
+                id = Cells(m, 3).Value
+                col = Cells(m, 4).Value
+                stat = Cells(m, 5).Value
+                item = Cells(m, 2).Value
+                If Not itemlist.Exists(item) And Replace(LCase(id), " ", "") <> "shoponly" Then
+                    itemlist.add item, item
+                    listbuf = listbuf & "$itemlist[] = 'cd=" & item & gid & "'; $item" & textFormat(CStr(count), "00") & " = '" & Replace(item, "&cl=", "-") & "';  //#" & textFormat(CStr(count), "00") & vbNewLine
+                    count = count + 1
+                End If
+
+                If InStr(name, "参考商品") > 0 Then
+                    html = html & "<p>" & name & "（参考商品）</p>" & isNewline(compression)
+                ElseIf InStr(name, "スタイリスト") > 0 Then
+                    html = html & "<p>" & name & "（スタイリスト）</p>" & isNewline(compression)
+                ElseIf InStr(Replace(LCase(id), " ", ""), "shoponly") > 0 Or InStr(Replace(LCase(name), " ", ""), "shoponly") > 0 Or InStr(Replace(LCase(stat), " ", ""), "shoponly") > 0 Then
+                    html = html & "<p>" & name & "（SHOP ONLY）</p>" & isNewline(compression)
+                ElseIf InStr(Replace(LCase(id), " ", ""), "comingsoon") > 0 Or InStr(Replace(LCase(name), " ", ""), "comingsoon") > 0 Or InStr(Replace(LCase(stat), " ", ""), "comingsoon") > 0 Then
+                    html = html & "<p><a href=""" & getItemPHP(id, col) & """ target=""_blank"">" & name & "（COMING SOON）</a></p>" & isNewline(compression)
+                Else
+                    html = html & "<p><a href=""" & getItemPHP(id, col) & """ target=""_blank"">" & name & "<span class=""pricebox"">" & getItemPHP(id, col, "p") & "</span></a></p>" & isNewline(compression)
+                End If
+            '--------------------------------
+            Next
+            html = html & "<!-- // END LEFT ITEMS //-->" & isNewline(compression) & isNewline(compression)
+            buf = buf & html
+            html = ""
+            html = "<!-- // RIGHT ITEMS //--><ul class=""lookbook_sidebar"">"
+            For m = startlist To endlist Step 1
+            'ループ2回目生成記述箇所--------------
+                name = Cells(m, 6).Value
+                id = Cells(m, 3).Value
+                col = Cells(m, 4).Value
+                stat = Cells(m, 5).Value
+
+                If InStr(name, "参考商品") > 0 Or InStr(name, "スタイリスト") > 0 Or InStr(Replace(LCase(id), " ", ""), "shoponly") > 0 Or InStr(Replace(LCase(stat), " ", ""), "shoponly") > 0 Then
+                    html = html & "<li style=""display:none""></li>" & isNewline(compression)
+                ElseIf InStr(Replace(LCase(name), " ", ""), "comingsoon") > 0 Or InStr(Replace(LCase(id), " ", ""), "comingsoon") > 0 Or InStr(Replace(LCase(stat), " ", ""), "comingsoon") > 0 Then
+                    name = name & "（COMING SOON）"
+                    html = html & "<li style=""display:none""><a href=""" & getItemPHP(id, col) & """ target=""_blank"">" & getImg(name, id, col) & "</a></li>" & isNewline(compression)
+                Else
+                    html = html & "<li><a href=""" & getItemPHP(id, col) & """ target=""_blank"">" & getImg(name, id, col) & "</a></li>" & isNewline(compression)
+                End If
+            '--------------------------------
+            Next
+            html = html & "</ul><!-- // END RIGHT ITEMS //--></ul><!-- END ul desc --></div><!-- ▲ #" & no & " -->" & isNewline(compression) & isNewline(compression)
+
+            buf = buf & html
+            html = ""
+        End If
+
+    Next
+
+    Set itemlist = Nothing
+
+    html = "<?php" & vbNewLine
+    html = html & listbuf & "?>"
+
+    Call fileoutput("lookbook.html", FreeFile, buf)
+    Call fileoutput("itemlist.inc", FreeFile, html)
+
+End Sub
+
+Sub fb_convertItemHTML()
+    Dim html As String
+    Dim endnum As Integer
+    endnum = Cells(Rows.count, 3).End(xlUp).Row
+
+    For i = 2 To endnum Step 1
+        Dim img As String
+            Dim href As String
+            If Cells(i, 3) = "shoponly" Or Cells(i, 3) = "comingsoon" Then
+                href = ""
+                img = "<img src=""//www.example.co.jp/brand/images/" & Cells(i, 3) & ".gif"" onerror=""this.src ='//www.example.co.jp/brand/images/noimg.gif'"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" />"
+            Else
+                href = "href=""//www.example.co.jp/shop/item/main.html?cd=" & Cells(i, 3) & "&ref=blog_press_fb"" target=""_blank"""
+                img = "<img src=""//www.example.co.jp/images/item/" & Cells(i, 4) & "/P" & Cells(i, 5) & "M0.jpg"" onerror=""this.src ='//www.example.co.jp/brand/images/noimg.gif'"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" />"
+
+            End If
+
+        If Cells(i, 1) <> "" And i = 2 Then
+
+            If Cells(i + 1, 1) <> "" Then
+                html = "<div class=""itembox""><p class=""inner""><a " & href & ">" & img & "</a><a class=""credit"" " & href & ">" & Cells(i, 6) & "</a></p>"
+            Else
+                html = "<div class=""itembox""><p class=""inner""><a " & href & ">" & img & "</a><a class=""credit"" " & href & ">" & Cells(i, 6) & "</a></p></div>"
+            End If
+
+        ElseIf Cells(i, 1) <> "" And i > 2 Then
+            If Cells(i + 1, 1) = "" And Cells(i - 1, 1) = "" Then
+                html = "<div class=""itembox""><p class=""inner""><a " & href & ">" & img & "</a><a class=""credit"" " & href & ">" & Cells(i, 6) & "</a></p></div>"
+            Else
+                If Cells(i + 1, 1) <> "" Then
+                    html = "<div class=""itembox""><p class=""inner""><a " & href & ">" & img & "</a><a class=""credit"" " & href & ">" & Cells(i, 6) & "</a></p>"
+                Else
+                    html = "<p class=""inner""><a " & href & ">" & img & "</a><a class=""credit"" " & href & ">" & Cells(i, 6) & "</a></p></div>"
+                End If
+            End If
+
+        Else
+            html = ""
+        End If
+            Cells(i, 7).Value = html
+    Next
+            Call clearRow(endnum + 1, 7)
+
+End Sub
+
+Sub fb_convertImageHtml()
+    Dim html As String, endnum As Integer
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+
+
+    For i = 2 To endnum Step 1
+        If Cells(i, 1) <> "" And InStr(Cells(i, 1), "common") > 0 Then
+        html = "<p class=""featured_img""><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/common/" & Cells(i, 3) & ".jpg"" alt=""images"" width=""150"" height=""77""/><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & Replace(Cells(i, 1), "common", "") & "/" & Cells(i, 2) & "/" & Cells(i, 3) & ".jpg"" alt=""images"" width=""481"" height=""625"" /></p>"
+        ElseIf Cells(i, 1) <> "" And i <> "common" Then
+
+        html = "<p class=""featured_img""><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & Cells(i, 1) & "/" & Cells(i, 2) & "/" & Cells(i, 3) & ".jpg"" alt=""images"" width=""481"" height=""625"" /></p>"
+
+        Else
+            html = ""
+        End If
+            Cells(i, 4).Value = html
+    Next
+        Call clearRow(endnum + 1, 4)
+End Sub
+
+Sub fb_makePRESSHTML()
+    Dim html As String, endnum As Integer, day As String, text As String, link As String, linkdata As Variant, brand As String, compress As Boolean, img As String, count As Integer
+
+    day = Cells(3, 5)
+    count = 1
+
+    html = "<div id=""blog_entry_box""><h2 name=""" & format(day, "yymmdd") & "_brands"" id=""" & format(day, "yymmdd") & "_brands""><img src=""<?php echo $ic_mz_img;?>/brand/blog/common/images/blog_h2_press_fb.gif"" alt=""PRESS"" width=""617"" height=""26"" /></h2><div class=""blog_main_block""><h4><span class=""date"">" & format(day, "yyyy.mm.dd") & "</span><span class=""icon""><img src=""<?php echo $ic_mz_img;?>/brand/blog/common/images/blog_icon_new.gif"" alt=""NEW"" /></span></h4>" & isNewline(compress)
+    endnum = Max(Cells(Rows.count, 2).End(xlUp).Row, Cells(Rows.count, 3).End(xlUp).Row)
+    For i = 3 To endnum
+        If Cells(i, 1) <> "" Then
+        brand = Cells(i, 1)
+        End If
+        img = Cells(i, 2)
+        '------------------------------------------------ブランドタイトル
+        If Cells(i, 1) <> "" Then
+            html = html & "<p class=""featured_imgtop""><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & format(day, "yymmdd") & "/" & brand & "/title.gif"" alt=""images"" width=""550"" height=""77""/><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & format(day, "yymmdd") & "/" & brand & "/title.jpg"" alt=""images"" width=""481"" height=""625"" /></p>" & isNewline(compress)
+        End If
+        '------------------------------------------------イメージタグ
+        If img <> "" And InStr(img, "_") > 0 Then
+            html = html & "<p class=""featured_img""><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & format(day, "yymmdd") & "/" & brand & "/" & img & ".jpg"" alt=""images"" width=""481"" height=""625"" /></p>" & isNewline(compress)
+        ElseIf img <> "" Then
+            html = html & "<p class=""featured_img""><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/common/" & img & ".jpg"" alt=""images"" width=""150"" height=""77""/><img src=""<?php echo $ic_mz_img;?>/brand/facebook/press/images/" & format(day, "yymmdd") & "/" & brand & "/" & img & ".jpg"" alt=""images"" width=""481"" height=""625"" /></p>" & isNewline(compress)
+        End If
+        '------------------------------------------------リンク
+        link = Cells(i, 3)
+        If link <> "" Then
+            Dim item As String
+            text = Cells(i, 4)
+            If link <> "shoponly" And link <> "comingsoon" And link <> "noimage" Then
+            linkdata = Split(link, "&cl=")
+
+            item = "<p class=""inner""><a href=""//www.example.co.jp/shop/item/main.html?cd=" & link & "&ref=blog_press_fb"" target=""_blank""><img src=""//www.example.co.jp/images/item/" & linkdata(0) & "/P" & textFormat(str(linkdata(1)), "000") & "M0.jpg"" onerror=""this.src ='//www.example.co.jp/brand/images/noimg.gif'"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" /></a><a class=""credit"" href=""//www.example.co.jp/shop/item/main.html?cd=" & link & "&ref=blog_press_fb"" target=""_blank"">" & text & "</a></p>"
+            ElseIf link = "shoponly" Then
+            item = "<p class=""inner""><img src=""//www.example.co.jp/brand/images/shoponly.gif"" onerror=""this.src ='//www.example.co.jp/brand/images/noimg.gif'"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" /><span class=""credit"">" & text & "</span></p>"
+            ElseIf link = "comingsoon" Then
+            item = "<p class=""inner""><img src=""//www.example.co.jp/brand/images/comingsoon.gif"" onerror=""this.src ='//www.example.co.jp/brand/images/noimg.gif'"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" /><span class=""credit"">" & text & "</span></p>"
+            ElseIf link = "noimage" Then
+            item = "<p class=""inner""><img src=""//www.example.co.jp/brand/images/noimg.gif"" alt=""images"" width=""200"" height=""206"" style=""margin:0 0 10px 0;"" border=""0"" /><span class=""credit"">" & text & "</span></p>"
+            End If
+
+            '---------------------------------------------追加DOM決定分岐
+            If Cells(i + 1, 2) <> "" And Cells(i + 1, 3) = "" Then
+            '●　○
+            html = html & "<div class=""itembox"">" & item & "</div>" & isNewline(compress) & isNewline(compress)
+            count = 1
+            ElseIf Cells(i + 1, 2) = "" And Cells(i + 1, 3) = "" Then
+            '○　○
+                If count Mod 2 = 0 Then
+                html = html & item & "</div>" & isNewline(compress)
+                Else
+                html = html & "<div class=""itembox"">" & item & "</div>" & isNewline(compress) & isNewline(compress)
+                End If
+            count = 1
+            ElseIf Cells(i + 1, 2) <> "" And Cells(i + 1, 3) <> "" Then
+            '●　●
+                If count Mod 2 = 0 Then
+                html = html & item & "</div>" & isNewline(compress)
+                Else
+                html = html & "<div class=""itembox"">" & item & "</div>" & isNewline(compress) & isNewline(compress)
+                End If
+            count = 1
+            ElseIf Cells(i + 1, 2) = "" And Cells(i + 1, 3) <> "" Then
+            '○　●
+                If count Mod 2 = 0 Then
+                html = html & item & "</div>" & isNewline(compress) & isNewline(compress)
+                Else
+                html = html & "<div class=""itembox"">" & item & isNewline(compress) & isNewline(compress)
+                End If
+            count = count + 1
+            End If
+
+        End If
+    Next
+        html = html & isNewline(compress) & "<div style=""width:610px;height:auto;mwithgin:0 auto;padding:15px 0 0 0;text-align:right;clewith:both;""><a class=""toTop"" href=""#top"">▲TOP</a></div></div><!-- END blog_main_block --></div><!-- END blog_entry_box -->" & isNewline(compress) & "<script type=""text/javascript""> var _gaq = _gaq || []; _gaq.push(['_setAccount', 'UA-XXXXXXXX']); _gaq.push(['_trackPageview']); (function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true; ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();</script>" & isNewline(compress)
+        Call fileoutput("fbpress.html", FreeFile, html)
+End Sub
+
+
+Sub Runtest()
+'    Dim o As Object, cmd As String
+'    cmd = getthisfilepath & "\img\1.jpg "
+'    Set o = CreateObject("Wscript.Shell")
+'    o.Run "photoshop" & " " & cmd, 0, False
+'    Set o = Nothing
+    Dim list As String, RE As Object, links As Variant
+
+    Set RE = CreateObject("VBScript.RegExp")
+    RE.Global = True
+    RE.pattern = "';.+"
+    list = fileload(getfilepath("itemlist.inc"))
+    list = Replace(list, "$itemlist[] = 'cd=", "")
+    list = Replace(list, "<?php", "")
+    list = Replace(list, "?>", "")
+    list = RE.Replace(list, "")
+    Set RE = Nothing
+    links = Split(list, "vbCr")
+    For i = 0 To LBound(links)
+
+    Next
+    Cells(1, 1) = list
+End Sub
+
+Sub convtest()
+    Dim a As Variant, b As String, endnum As Integer
+
+    endnum = getEndRow(1, 1)
+    For i = 1 To endnum
+    If Cells(i, 1) <> "" Then
+    a = Split(Cells(i, 1), ",")
+    Cells(i, 2) = a(0) & "," & a(1) & "," & Int(a(0)) + Int(a(2)) & "," & Int(a(1)) + Int(a(3))
+    'Cells(i, 2) = a(0)
+    End If
+    Next
+
+End Sub
+
+Sub makemagazine()
+
+    Dim script As String, html As String, count As Integer, wrapdom As String, link As String, alt As String, blank As String, btnoffimg As String, btnonimg As String, num As String, onimg As String, offimg As String, RE As Object, compress As Boolean, endnum, startlist, endlist As Integer, reMatch, size As Variant, btnpath As String, prop As String, jquery As String, css As String, display As String
+
+    compress = Cells(4, 9)
+    jquery = Cells(12, 9)
+    display = "adddisplay = [" & Cells(14, 9) & "]"
+    gareria = "Galleria.ready(function(){var g = this,idx,btidx,$addimginner," & display & ";g.bind('loadstart',function(e){idx = g.getIndex(),btnidx = $.inArray(idx,adddisplay);if(btnidx!==-1){$addimginner = $('#addimg .addinner .page');$addimginner.eq(btnidx).css({'z-index':2}).show().siblings('.page').css({'z-index':0}).hide();$addimginner.find('.credit').css({'opacity':0});$('#addimg').show();}else{$('#addimg').hide();};});/*Galleria.bind 'loadstart' end*/});/*Galleria.ready end*/"
+    script = IIf(jquery <> "", "<script type=""text/javascript"" src=""http://ajax.googleapis.com/ajax/libs/jquery/" & jquery & "/jquery.min.js""></script>" & isNewline(compress), "")
+    css = "var addimgcss = '<style type=""text/css"">#addimg {width:960px;height:590px;position:absolute;top:10px;left:0px;display:none;z-index:2;} #addimg .addinner {width:960px;height:590px;position:relative;margin:0;padding:0;} #addimg .addinner .page {position:absolute;overflow:hidden;}#addimg .addinner .page a {display:block;} </style>';$('head').append(addimgcss);$('#addimg .addinner').children().addClass('page');"
+    script = script & "<script type=""text/javascript""> <!--" & vbNewLine & "$(function (){ " & css & isNewline(compress) & gareria & " $('.addinner .pagewrap a').css({'opacity':0,'outline':'none'}).on({'mouseover':function(){$(this).stop(true,true).animate({'opacity':1})},'mouseout':function(){$(this).stop(true,true).animate({'opacity':0})}});});" & vbNewLine & "//-->" & vbNewLine & "</script>"
+    gareria = "<div id=""galleria"">" & isNewline(compress)
+    Set RE = CreateObject("VBScript.RegExp")
+    RE.pattern = "[a-z]+"
+    count = IIf(Cells(10, 9) <> "", Cells(10, 9), 1)
+    size = Split(Cells(6, 9).Value, "x")
+    endnum = Cells(Rows.count, 4).End(xlUp).Row
+    btnpath = Cells(2, 9).Value
+    prop = Cells(8, 9)
+
+    html = script & isNewline(compress) & "<div class=""magazine_screen""><div id=""addimg""><div id=""cover""></div><div class=""addinner"" style=""" & getkeyvalue("width", str(size(0)), "px;") & getkeyvalue("height", str(size(1)), "px;") & getkeyvalue("overflow", "hidden;") & getkeyvalue("position", "relative;") & """>"
+    For i = 2 To endnum
+    num = Cells(i, 1).Value
+    If num <> "" Then
+        wrapdom = Cells(i, 2)
+        'btnoffimg = btnpath & Cells(i, 3)
+        html = html & isNewline(compress) & "<!--page" & textFormat(str(count), "00") & "-->" & isNewline(compress) & Replace(wrapdom, ">", "") & " style=""" & getkeyvalue("width", str(size(0)), "px;") & getkeyvalue("height", str(size(1)), "px;") & """>"
+        endlist = getRunMaxRow(str(i), 4)
+        For m = i To endlist
+        link = Cells(m, 5).Value
+        alt = Cells(m, 6).Value
+        blank = Cells(m, 7).Value
+        btnonimg = btnpath & Cells(m, 8)
+        html = html & getbuttontag(Cells(m, 4), Cells(m, 5), btnonimg, Cells(m, 6), Cells(m, 7), prop & "_" & textFormat(str(count), "00")) & isNewline(compress)
+        Next
+        Set reMatch = RE.Execute(wrapdom)
+        If reMatch.count > 0 Then
+        html = html & endtag(reMatch(0).Value) & isNewline(compress)
+
+        End If
+
+        gareria = gareria & "<!-- #" & textFormat(str(count), "00") & " -->" & isNewline(compress) & "<img src=""<?php echo $ic_home_url;?>/brand/magazine/<?php echo $month.'/'.$today ; ?>/images/<?php echo $today ; ?>_magazine_" & textFormat(str(count), "00") & ".jpg"" title=""MAGAZINE - <?php echo $brand_name; ?>"" alt=""MAGAZINE - <?php echo $brand_name; ?>"" />" & isNewline(compress)
+        count = count + 1
+    End If
+    Next
+
+    gareria = gareria & isNewline(compress) & "</div><!--galleria end-->" & isNewline(compress) & "</div><!--magazine screen end-->"
+    html = html & "</div><!--addinner end--></div>" & isNewline(compress) & "<!--addimg end-->" & isNewline(compress) & gareria
+    Call fileoutput("magazine.html", FreeFile, html)
+    Set RE = Nothing
+    Set reMatch = Nothing
+
+End Sub
+
+Sub makeButton()
+
+    Dim script As String, html As String, count As Integer, wrapdom As String, link As String, alt As String, blank As String, btnoffimg As String, btnonimg As String, num As String, onimg As String, offimg As String, RE As Object, compress As Boolean, endnum, startlist, endlist As Integer, reMatch, size As Variant, btnpath As String, prop As String, jquery As String
+
+    jquery = Cells(12, 9)
+    script = IIf(jquery <> "", "<script type=""text/javascript"" src=""http://ajax.googleapis.com/ajax/libs/jquery/" & jquery & "/jquery.min.js""></script>" & isNewline(compress), "")
+    script = script & "<script type=""text/javascript""><!--" & vbNewLine & "$(function (){$('#pagecontainer .pagewrap a').css({'opacity':0,'outline':'none'}).on({'mouseover':function(){$(this).stop(true,true).animate({'opacity':1})},'mouseout':function(){$(this).stop(true,true).animate({'opacity':0})}});});" & vbNewLine & "//-->" & vbNewLine & "</script>"
+    Set RE = CreateObject("VBScript.RegExp")
+    RE.pattern = "[a-z]+"
+    compress = Cells(4, 9)
+    count = IIf(Cells(10, 9) <> "", Cells(10, 9), 1)
+    size = Split(Cells(6, 9).Value, "x")
+    endnum = Cells(Rows.count, 3).End(xlUp).Row
+    btnpath = Cells(2, 9).Value
+    prop = Cells(8, 9)
+
+    html = script & isNewline(compress) & "<div id=""pagecontainer"" style=""" & getkeyvalue("width", str(size(0)), "px;") & getkeyvalue("height", str(size(1)), "px;") & getkeyvalue("overflow", "hidden;") & getkeyvalue("position", "relative;") & """>"
+    For i = 2 To endnum
+    num = Cells(i, 1).Value
+    If num <> "" Then
+        wrapdom = Cells(i, 2)
+        btnoffimg = btnpath & Cells(i, 3)
+        html = html & isNewline(compress) & "<!--page" & textFormat(str(count), "00") & "-->" & isNewline(compress) & Replace(wrapdom, ">", "") & " style=""background:url(" & btnoffimg & ") no-repeat;" & getkeyvalue("width", str(size(0)), "px;") & getkeyvalue("height", str(size(1)), "px;") & """>"
+        endlist = getRunMaxRow(str(i), 4)
+        For m = i To endlist
+        link = Cells(m, 5).Value
+        alt = Cells(m, 6).Value
+        blank = Cells(m, 7).Value
+        btnonimg = btnpath & Cells(m, 8)
+        html = html & getbuttontag(Cells(m, 4), Cells(m, 5), btnonimg, Cells(m, 6), Cells(m, 7), prop & "_" & textFormat(str(count), "00")) & isNewline(compress)
+        Next
+        Set reMatch = RE.Execute(wrapdom)
+        If reMatch.count > 0 Then
+        html = html & endtag(reMatch(0).Value) & isNewline(compress)
+
+        End If
+        count = count + 1
+    End If
+    Next
+    html = html & "</div><!--pagecontainer end-->"
+    Call fileoutput("makebutton.html", FreeFile, html)
+    Set RE = Nothing
+    Set reMatch = Nothing
+
+End Sub
+
+Sub colorToArray()
+    Dim endrow As Integer, i As Integer, k As Long, color As String, endcol As Long, x As Long, y As Long
+    Dim Dic As Object, indx As Integer, table As Variant
+
+
+    Set Dic = CreateObject("Scripting.Dictionary")
+    x = Worksheets("色情報変換").Cells.Find("色情報").Column
+    y = Worksheets("色情報変換").Cells.Find("色情報").Row
+
+    For i = 2 To getEndRow(1, x)
+        color = Cells(i, x).Interior.color
+        indx = Cells(i, x).Value
+        Dic.add color, indx
+
+    Next
+
+'    X = Worksheets("色情報変換").Cells.Find("表範囲").Column
+'    Y = Worksheets("色情報変換").Cells.Find("表範囲").Row + 1
+
+'    table = Cells(X, Y).Value
+'    table = Range(Cells(X, Y))
+
+    endcol = getEndCol(1, 1) - 1
+    endrow = getEndRow(1, endcol) - 1
+
+    For k = 1 To endcol
+        For i = 1 To endrow
+            color = Cells(i, k).Interior.color
+            If Dic.Exists(color) Then
+                Cells(i, k).Value = Dic(color)
+            End If
+        Next
+    Next
+
+    Set Dic = Nothing
+End Sub
+
+
+
+Public Function getendtag(Optional t As String = "") As String
+    Dim RE As Object, reMatch As Variant, tag As Variant
+    If t <> "" Then
+    Set RE = CreateObject("VBScript.RegExp")
+        RE.pattern = "[a-z]+"
+    Set reMatch = RE.Execute(t)
+    If reMatch.count > 0 Then
+        tag = reMatch(0).Value
+    Else
+        tag = "empty"
+    End If
+    getendtag = "</" & tag & ">"
+    Set RE = Nothing
+    Set reMatch = Nothing
+    Else
+    getendtag = ""
+    End If
+
+End Function
+
+Public Function getareatag(area As String, link As String, Optional prop As String = "", Optional a As String = "", Optional b As String = "") As String
+    Dim atag, alt, blank As String
+    atag = Replace(area, "#"">", "")
+    If a <> "" Then
+    alt = " title=""" & a & """"
+    End If
+    If b <> "" Then
+    blank = " target=""" & b & """"
+    End If
+    getareatag = atag & getLCBPHPLink(link) & getquerystr(link) & prop & alt & blank & " />"
+End Function
+
+Public Function getbuttontag(area As String, link As String, img As String, Optional al As String = "", Optional blank As String = "", Optional prop As String = "") As String
+
+    Dim areatag, w, h, x, y As String, a As Variant, p As String
+    areatag = Replace(area, "<area shape=""rect"" coords=""", "")
+    areatag = Replace(areatag, """ href=""#"">", "")
+
+    a = Split(areatag, ",")
+    w = (a(2) - a(0))
+    h = (a(3) - a(1))
+    x = a(0)
+    y = a(1)
+    If al <> "" Then
+        al = "title=""" & al & """ "
+    End If
+    If blank <> "" Then
+        blank = "target=""" & blank & """ "
+    End If
+    If prop <> "" Then
+    p = "&ref=" & prop
+    End If
+    getbuttontag = "<a style=""display:block;position:absolute;background:url('" & img & "') " & setformat(str(CInt(x) * -1)) & " " & setformat(str(CInt(y) * -1)) & ";width:" & setformat(str(w)) & ";height:" & setformat(str(h)) & ";top:" & setformat(str(y)) & ";left:" & setformat(str(x)) & ";"" href=""" & getLCBPHPLink(link) & p & """ " & al & blank & "></a>"
+End Function
+
+Public Function getkeyvalue(k As String, v As String, Optional f As String = "") As String
+    getkeyvalue = k & ":" & v & f
+End Function
+
+Public Function setformat(t As String, Optional add As String = "px") As String
+    setformat = t & add
+End Function
+
+
+Public Function endtag(t As String) As String
+    endtag = "</" & t & ">"
+End Function
+
+Sub openURL()
+    Dim Cmd As String, endnum As Integer, wsh As Object
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    If endnum > 1 Then
+    Cmd = "start chrome "
+    For i = 2 To endnum
+        Cmd = Cmd & " " & """" & getLCBLink(Cells(i, 1).Value) & """"
+    Next
+    Cmd = Cmd & " | " & "exit"
+    'Call fileoutput("openurl.bat", FreeFile, cmd)
+    Set wsh = CreateObject("WScript.Shell")
+    'WSH.Run "C:\Users\Staff\Desktop\workspace\koushin\openurl.bat", 0, False
+    wsh.Exec ("%ComSpec% /c " & Cmd)
+    Set wsh = Nothing
+    End If
+
+End Sub
+
+Sub openUR()
+    Dim Cmd As String, endnum As Integer, wsh As Object
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    If endnum > 0 Then
+    Cmd = ""
+    For i = 2 To endnum
+
+        Cmd = Cmd & "start " & Cells(i, 1).Value & isNewline(False)
+    Next
+    Cmd = Cmd & "cd " & getthisfilepath() & isNewline(False)
+    Cmd = Cmd & "del " & "openurl.bat"
+    Call fileoutput("openurl.bat", FreeFile, Cmd)
+    Set wsh = CreateObject("WScript.Shell")
+    'MsgBox getthisfilepath() & "\openurl.bat"
+    wsh.Run getthisfilepath() & "\openurl.bat", 0, True
+    'WSH.Exec ("%ComSpec% /c " & cmd)
+    Set wsh = Nothing
+    End If
+
+End Sub
+
+Sub 文字列リストに基づき連続して置換する()
+    i = 2
+    Do
+        x1 = Sheets("置換え").Cells(i, 1)
+        x2 = Sheets("置換え").Cells(i, 2)
+        Sheets("置換えターゲット").Cells.Replace _
+            What:=x1, Replacement:=x2, _
+            SearchOrder:=xlByColumns, MatchCase:=True
+        i = i + 1
+    Loop Until Sheets("置換え").Cells(i, 1) = ""
+End Sub
+
+Sub 外部テキストファイルを文字列リストに基づき連続して置換し別ファイルを出力する()
+    Dim wsh, path As Object, srcpath As String, strguide As String, filename As Variant, htm As String, endnum As Integer, RE As String, objRE As Object, SAVE As Boolean, UNDERSCORE As String
+
+
+    SAVE = Cells(4, 3)
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+
+    ChDrive "C"
+    ChDir "C:\Users\USERNAME\Desktop\REPLACE"
+
+    filename = _
+        Application.GetOpenFilename( _
+        FileFilter:="すべてのテキストファイル , *.txt;*.html" _
+           , FilterIndex:=1 _
+           , title:="置換えを実行するテキストファイルを指定してください" _
+           , MultiSelect:=False _
+            )
+
+    'ファイルが選択されているときは
+    '選択したファイルをWorkbooks.Openメソッドで開きます
+    If filename <> False Then
+    srcpath = filename
+    htm = getFile(srcpath)
+    UNDERSCORE = IIf(InStr(Cells(2, 3), "連番") > 0, "_", "")
+    For i = 2 To endnum
+
+    If InStr(Cells(2, 3), "連番") > 0 Then
+
+    RE = RemNum(Cells(i, 1))
+
+    'MsgBox re & " " & RemNum(Cells(i - 1, 1)) & "結果" & InStr(re, RemNum(Cells(i - 1, 1)))
+    If InStr(RE, RemNum(Cells(i - 1, 1))) < 1 Then
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = RE & "([0-9]+)"
+    objRE.Global = True
+    htm = objRE.Replace(htm, RE & "$1_")
+    Set objRE = Nothing
+    End If
+    End If
+    htm = Replace(htm, Cells(i, 1) & UNDERSCORE, Cells(i, 2))
+
+    Next
+
+    If SAVE = False Then
+    srcpath = Replace(srcpath, ".", "_rep.")
+    End If
+    Call fileoutput(srcpath, FreeFile, htm)
+
+    MsgBox "置換え完了しました。"
+    Else
+    MsgBox "置換えキャンセルしました。"
+
+    End If
+
+
+End Sub
+
+Public Function isDir(path)
+
+    isDir = Dir(path, vbDirectory)
+
+End Function
+
+Sub メタ情報の編集()
+
+    'MsgBox "メタok"
+    Dim path As String, endnum As Integer, filename As String, htm As String, objRE As Object, endcol As Integer, code As String
+
+    path = UserForm1.path.Value
+    code = UserForm1.ComboBox1.Value
+
+    If path = "" Then
+    MsgBox "ルートディレクトリを設定してください"
+    Exit Sub
+    End If
+
+    If isDir(path) = "" Then
+    MsgBox "ディレクトリが存在しません"
+    Exit Sub
+    End If
+
+    path = path & "\"
+    endnum = getEndRow(1, 1)
+    endcol = getEndCol(1, 1)
+
+    For i = 2 To endnum
+
+    filename = path & Cells(i, 1).Value
+
+    If isDir(filename) <> "" Then
+    htm = getFile_ENCODE(filename, code)
+
+    For j = 2 To endcol
+
+    If j = 1 Then
+    Cells(i, 1).Interior.ColorIndex = 20
+    End If
+
+    Dim str As String
+
+    str = Cells(i, j).Value
+    If str <> "" Then
+
+    str = getFile_ENCODE(str, "UTF-8")
+    'str = Cells(i, j).Value
+    End If
+
+    If j = 2 Then
+
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = "<title>.*<\/title>"
+    objRE.Global = True
+    htm = objRE.Replace(htm, "<title>" & str & "</title>")
+    Set objRE = Nothing
+
+    ElseIf j = 3 Then
+
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = "<meta name=""keywords"" content=""[^""]*"""
+    objRE.Global = True
+    htm = objRE.Replace(htm, "<meta name=""keywords"" content=""" & str & """")
+    Set objRE = Nothing
+    ElseIf j = 4 Then
+
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = "<meta name=""description"" content=""[^""]*"""
+    objRE.Global = True
+    htm = objRE.Replace(htm, "<meta name=""description"" content=""" & str & """")
+    Set objRE = Nothing
+
+    End If
+
+    Next
+
+    Call fileoutput_ENCODE(filename, FreeFile, htm, code)
+
+    Else
+        Cells(i, 1).Interior.ColorIndex = 3
+    End If
+
+    Next
+
+    MsgBox "置換え完了しました。"
+
+    Exit Sub
+
+End Sub
+
+Sub 複数対象ファイルの置換()
+    Dim path As String, endnum As Integer, filename As String, htm As String, objRE As Object, code As String, setcode As String
+    endnum = getEndRow(1, 1)
+    code = Range("E2")
+
+    For i = 2 To endnum
+    Cells(i, 1).Interior.ColorIndex = 0
+    Next
+
+    For i = 2 To endnum
+
+     filename = Cells(i, 1).Value
+
+     If isDir(filename) <> "" Then
+
+        If code = "AUTO" Then
+            setcode = CharSetOfText(Cells(i, 1).Value)
+        Else
+            setcode = code
+        End If
+
+        '置換処理
+        If Cells(i, 3).Value <> "" Then
+
+        htm = getFile_ENCODE(filename, setcode)
+        Set objRE = CreateObject("VBScript.RegExp")
+        objRE.pattern = Cells(i, 3).Value
+        objRE.Global = True
+        htm = objRE.Replace(htm, Cells(i, 4).Value)
+        Set objRE = Nothing
+
+        Cells(i, 1).Interior.ColorIndex = 20
+        End If
+
+        If Cells(i, 2).Value <> "" Then
+        filename = Cells(i, 2).Value
+        If filename <> "" And Not filename = "書き出し先が未設定です。" Then
+            Call fileoutput_ENCODE(filename, FreeFile, htm, setcode)
+        Else
+            Cells(i, 2).Interior.ColorIndex = 3
+            Cells(i, 2).Value = "書き出し先が未設定です。"
+        End If
+
+        End If
+
+    Else
+        Cells(i, 1).Interior.ColorIndex = 15
+
+    End If
+
+    Next
+    MsgBox "処理が完了しました"
+
+
+End Sub
+
+Sub 複数ファイルのコピー()
+    Dim endnum As Integer
+    Dim beforefilepath As String, afterfilepath As String
+    Dim setoutputLine As Integer
+    Dim pos As String, deepPath As String
+    Dim i As Integer
+
+    endnum = getEndRow(1, 1)
+
+    Call セル背景リセット
+    Call clearRow(2, 3)
+
+    For i = 2 To endnum
+        setoutputLine = i
+
+        '読み込み先が存在する場合置き換え対象ファイルを上書き
+        If Cells(setoutputLine, 1) <> "" Then
+            beforefilepath = Cells(setoutputLine, 1).Value
+
+            '読み込むファイルのパスが記述されているか確認とファイル存在チェック
+            If isDir(beforefilepath) <> "" Then
+
+                '始めは強制的に読み込む
+                If beforefilepath <> "" And setoutputLine = 2 Then
+                    Cells(setoutputLine, 1).Interior.ColorIndex = 20
+
+                End If
+        Else
+            'ファイルが存在しない場合
+            Cells(setoutputLine, 1).Interior.ColorIndex = 15
+            Cells(setoutputLine, 3).Interior.ColorIndex = 15
+            Cells(setoutputLine, 3).Value = "対象ファイルが存在しません"
+        End If
+
+
+            '出力先のパス
+            afterfilepath = Cells(setoutputLine, 2).Value
+
+            '出力先が指定されているか確認
+            If afterfilepath <> "" Then
+
+                'ディレクトリパス作成
+                pos = InStrRev(afterfilepath, "\")
+                deepPath = Left(afterfilepath, pos)
+
+                'ディレクトリが存在しなければ作成
+                If Dir(deepPath, vbDirectory) = "" Then
+                    Call CheckparentFolder(deepPath)
+                End If
+
+                'コピー
+                FileCopy beforefilepath, afterfilepath
+                    Cells(setoutputLine, 2).Interior.ColorIndex = 20
+                    Cells(setoutputLine, 3).Interior.ColorIndex = 20
+                    Cells(setoutputLine, 3).Value = "ファイルコピー完了"
+                Else
+                    '出力先が指定されていない場合
+                    Cells(setoutputLine, 2).Interior.ColorIndex = 3
+                    Cells(setoutputLine, 3).Interior.ColorIndex = 3
+                    Cells(setoutputLine, 3).Value = "コピー先が未設定です。"
+                End If
+
+            End If
+
+    Next
+    MsgBox "処理が完了しました"
+End Sub
+
+Sub 複数対象ファイルの連続置換()
+    Dim path As String, endnum As Integer
+    Dim filename As String, htm As String
+    Dim objRE As Object, code As String, setoutputLine As Integer, setcode As String
+    Dim tmppath As String, pos As String, deepPath As String
+    Dim regMode As String, targetStr As String, repStr As String
+
+    endnum = getEndRow(1, 3)
+    code = Range("F2")
+    regMode = Range("F4")
+
+    Call セル背景リセット
+    Call clearRow(5, 5)
+
+    For i = 2 To endnum
+        setoutputLine = i
+
+        '読み込み先が存在する場合置き換え対象ファイルを上書き
+        If Cells(setoutputLine, 1) <> "" Then
+            filename = Cells(setoutputLine, 1).Value
+
+            '読み込むファイルのパスが記述されているか確認とファイル存在チェック
+            If isDir(filename) <> "" Then
+
+            '文字コードのセット（仮）
+            setcode = code
+
+            'htm = getFile_ENCODE(filename, setcode)
+
+                '始めは強制的に読み込む
+                If filename <> "" And setoutputLine = 2 Then
+                    htm = getFile(filename)
+                    Cells(setoutputLine, 1).Interior.ColorIndex = 20
+
+                End If
+
+                '次のラインが空でなく同じファイルでない場合は新しいファイルを読み込む
+                If filename <> "" And filename <> Cells(i - 1, 1).Value And i > 2 Then
+                    htm = getFile(filename)
+                    Cells(setoutputLine, 1).Interior.ColorIndex = 20
+                Else
+                    '始の行以外
+                    If setoutputLine > 2 Then
+                        Cells(setoutputLine, 1).Interior.ColorIndex = 35
+                    End If
+                End If
+
+        Else
+            'ファイルが存在しない場合
+            Cells(setoutputLine, 1).Interior.ColorIndex = 15
+            Cells(setoutputLine, 5).Interior.ColorIndex = 15
+            Cells(setoutputLine, 5).Value = "対象ファイルが存在しません"
+        End If
+
+            '置換処理
+            If Cells(i, 3).Value <> "" Then
+
+                targetStr = Cells(setoutputLine, 3).Value
+                repStr = Cells(setoutputLine, 4).Value
+
+                If regMode = "正規表現" Then
+
+                    Set objRE = CreateObject("VBScript.RegExp")
+                    objRE.pattern = targetStr
+                    objRE.Global = True
+                        If objRE.Test(targetStr) Then
+                            '正規表現置換実行
+                            htm = objRE.Replace(htm, repStr)
+                            Cells(setoutputLine, 3).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 4).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Value = "正規表現置換完了"
+                        Else
+                            '置換対象が存在しない場合背景赤
+                            Cells(setoutputLine, 3).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 4).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 5).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 5).Value = "置換対象が存在しませんでした"
+                        End If
+                    Set objRE = Nothing
+
+                Else
+                        If InStr(htm, targetStr) <> 0 Then
+                            '置換実行
+                            htm = Replace(htm, targetStr, repStr)
+                            Cells(setoutputLine, 3).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 4).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Value = "置換完了"
+                        Else
+                            '置換対象が存在しない場合背景赤
+                            Cells(setoutputLine, 3).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 4).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 5).Interior.ColorIndex = 3
+                            Cells(setoutputLine, 5).Value = "置換対象が存在しませんでした"
+                        End If
+
+                End If
+
+            End If
+
+            If (setoutputLine <= endnum And Cells(setoutputLine + 1, 1) <> "") Or setoutputLine = endnum Then
+
+                filename = Cells(setoutputLine, 2).Value
+
+
+                '出力先が指定されているか確認
+                If filename <> "" Then
+
+                    '次の行が空ではなく同じ出力先ではないか確認
+                    If Cells(setoutputLine + 1, 2).Value <> "" And Cells(setoutputLine, 2).Value <> Cells(setoutputLine + 1, 2).Value Then
+                    'エンコード出力（仮）　Call fileoutput_ENCODE(filename, FreeFile, htm, setcode)
+
+                        'ディレクトリパス作成
+                        pos = InStrRev(filename, "\")
+                        deepPath = Left(filename, pos)
+                        'ディレクトリが存在しなければ作成
+                        If Dir(deepPath, vbDirectory) = "" Then
+                            Call CheckparentFolder(deepPath)
+                        End If
+                        '出力
+                            Call fileoutput(filename, FreeFile, htm)
+                            Cells(setoutputLine, 2).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Interior.ColorIndex = 20
+                            Cells(setoutputLine, 5).Value = "置換出力完了"
+                    Else
+                            Cells(setoutputLine, 2).Interior.ColorIndex = 35
+
+                    End If
+
+                    '最後の行の場合は強制出力
+                    If setoutputLine = endnum Then
+
+                    'ディレクトリパス作成
+                    pos = InStrRev(filename, "\")
+                    deepPath = Left(filename, pos)
+                    'ディレクトリが存在しなければ作成
+                        If Dir(deepPath, vbDirectory) = "" Then
+                            Call CheckparentFolder(deepPath)
+                        End If
+                        '出力
+                        Call fileoutput(filename, FreeFile, htm)
+                        Cells(setoutputLine, 2).Interior.ColorIndex = 20
+                        Cells(setoutputLine, 5).Interior.ColorIndex = 20
+                        Cells(setoutputLine, 5).Value = "置換出力完了"
+                    End If
+
+                Else
+                    '出力先が指定されていない場合
+                    Cells(setoutputLine, 2).Interior.ColorIndex = 3
+                    Cells(setoutputLine, 5).Interior.ColorIndex = 3
+                    Cells(setoutputLine, 5).Value = "書き出し先が未設定です。"
+                End If
+
+
+            End If
+
+
+        Else
+            '読み込みファイルが存在しない場合背景グレー
+
+            Cells(setoutputLine, 1).Interior.ColorIndex = 15
+            Cells(setoutputLine, 5).Interior.ColorIndex = 15
+            Cells(setoutputLine, 5).Value = "対象ファイルパスが未設定です。"
+        End If
+
+    Next
+    MsgBox "処理が完了しました"
+
+
+End Sub
+
+Sub 複数対象ファイルの文字列チェック()
+    Dim path As String, endnum As Integer, filename As String, htm As String, objRE As Object, code As String, setoutputLine As Integer, setcode As String
+    endnum = getEndRow(1, 1)
+    'code = Range("E2")
+
+    Call clearRow(2, 3)
+    Call セル背景リセット("A2", "C")
+
+    For i = 2 To endnum
+        '読み込み先が存在する場合置き換え対象ファイルを上書き
+        If Cells(i, 1) <> "" Then
+            filename = Cells(i, 1).Value
+
+            If isDir(filename) <> "" Then
+
+            'setcode = code
+
+            'htm = getFile_ENCODE(filename, setcode)
+            htm = getFile(filename)
+
+            If InStr(htm, Cells(i, 2).Value) <> 0 Then
+            Cells(i, 3).Value = "文字列存在しました"
+            Cells(i, 3).Interior.ColorIndex = 34
+            Else
+            Cells(i, 3).Value = "文字列存在しませんでした"
+            Cells(i, 3).Interior.ColorIndex = 3
+            End If
+
+            Cells(i, 1).Interior.ColorIndex = 35
+            End If
+
+            setoutputLine = i
+        Else
+        '読み込みファイルが存在しない場合背景グレー
+            Cells(i, 1).Interior.ColorIndex = 15
+
+        End If
+
+    Next
+    MsgBox "処理が完了しました"
+
+
+End Sub
+
+
+
+Sub 外部テキストファイルの数字を連続して置換し別ファイルを出力する()
+    Dim wsh, path As Object, srcpath As String, strguide As String, filename As Variant, htm As String, endnum As Integer, RE As String, objRE As Object, SAVE As Boolean, UNDERSCORE As String
+
+
+    SAVE = Cells(4, 3)
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    filename = _
+        Application.GetOpenFilename( _
+        FileFilter:="すべてのテキストファイル , *.txt;*.html" _
+           , FilterIndex:=1 _
+           , title:="置換えを実行するテキストファイルを指定してください" _
+           , MultiSelect:=False _
+            )
+
+    'ファイルが選択されているときは
+    '選択したファイルをWorkbooks.Openメソッドで開きます
+    If filename <> False Then
+    srcpath = filename
+    htm = getFile(srcpath)
+    UNDERSCORE = IIf(InStr(Cells(2, 3), "連番") > 0, "_", "")
+    For i = 2 To endnum
+
+    If InStr(Cells(2, 3), "連番") > 0 Then
+
+    RE = RemNum(Cells(i, 1))
+
+    'MsgBox re & " " & RemNum(Cells(i - 1, 1)) & "結果" & InStr(re, RemNum(Cells(i - 1, 1)))
+    If InStr(RE, RemNum(Cells(i - 1, 1))) < 1 Then
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = RE & "([0-9]+)"
+    objRE.Global = True
+    htm = objRE.Replace(htm, RE & "$1_")
+    Set objRE = Nothing
+    End If
+    End If
+    htm = Replace(htm, Cells(i, 1) & UNDERSCORE, Cells(i, 2))
+
+    Next
+
+    If SAVE = False Then
+    srcpath = Replace(srcpath, ".", "_rep.")
+    End If
+    Call fileoutput(srcpath, FreeFile, htm)
+
+    MsgBox "置換え完了しました。"
+    Else
+    MsgBox "置換えキャンセルしました。"
+
+    End If
+
+
+End Sub
+
+
+
+
+Sub 指定WEBページから指定タグ箇所を抽出する()
+
+
+    Dim objIE As Object, i As Long, k As Long, endnum As Integer, htm As Object, n As Integer, endcol As Integer
+    Dim c As Integer, a As Integer
+
+    Dim tmp As String
+    Dim tagtmp As String
+    Dim Reg As Object, strPattern As String, reMatch As Object
+    Dim AnalyticsId As String
+    Dim ScriptObject As Object, ScriptText As String
+
+    Range("B2:H999").Interior.ColorIndex = 0
+    Set Reg = CreateObject("VBScript.RegExp")
+    strPattern = "(UA-[0-9|-]+)"
+    Reg.Global = True
+    Reg.pattern = strPattern
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    endcol = getEndCol(1, 1)
+
+    If endnum > 0 Then
+        'セルのリセット
+        Set objIE = CreateObject("InternetExplorer.Application")
+        For i = 2 To endnum
+            For c = 2 To endcol
+                Cells(i, c) = ""
+                Cells(i, c).Interior.ColorIndex = 0
+            Next
+
+        With objIE
+        .navigate Cells(i, 1)
+        .Visible = False
+        While .busy Or .readystate <> 4: DoEvents: Wend
+
+
+        n = objIE.document.getElementsByTagName("meta").Length
+        For k = 0 To n - 1
+            'meta Descriptionタグのチェック
+            tmp = objIE.document.getElementsByTagName("meta")(k).name
+            If InStr(tmp, "description") > 0 Or InStr(tmp, "Description") > 0 Or InStr(tmp, "DESCRIPTION") > 0 Then
+                Cells(i, 3) = objIE.document.getElementsByTagName("meta")(k).Content
+                Cells(i, 3).Interior.ColorIndex = 0
+            'meta Keywordsタグのチェック
+            ElseIf InStr(tmp, "keywords") > 0 Or InStr(tmp, "Keywords") > 0 Or InStr(tmp, "KEYWORDS") > 0 Then
+                Cells(i, 4) = objIE.document.getElementsByTagName("meta")(k).Content
+                Cells(i, 4).Interior.ColorIndex = 0
+            'meta Robotsタグのチェック
+            ElseIf InStr(tmp, "robots") > 0 Or InStr(tmp, "Robots") > 0 Or InStr(tmp, "ROBOTS") > 0 Then
+                tagtmp = objIE.document.getElementsByTagName("meta")(k).Content
+                If InStr(tmp, "no") > 0 Then
+                    Cells(i, 7) = "インデックスされません"
+                Else
+                Cells(i, 8) = tagtmp
+                Cells(i, 8).Interior.ColorIndex = 0
+                End If
+            End If
+        Next
+
+        n = objIE.document.getElementsByTagName("link").Length
+        'canonicalタグのチェック
+        For k = 0 To n - 1
+            tmp = objIE.document.getElementsByTagName("link")(k).rel
+            If InStr(tmp, "canonical") > 0 Or InStr(tmp, "CANONICAL") > 0 Or InStr(tmp, "Canonical") > 0 Then
+                Cells(i, 5) = objIE.document.getElementsByTagName("link")(k).href
+               Cells(i, 5).Interior.ColorIndex = 0
+            End If
+        Next
+
+        'アナリティクスタグのチェック
+        n = objIE.document.getElementsByTagName("script").Length
+
+        For k = 0 To n - 1
+            tmp = objIE.document.getElementsByTagName("script")(k).src
+            If InStr(tmp, "analytics") > 0 Then
+                Cells(i, 6) = "読み込まれています"
+                Cells(i, 6).Interior.ColorIndex = 0
+
+                tmp = objIE.document.all(0).outerHTML
+                Set reMatch = Reg.Execute(tmp)
+                If reMatch.count > 0 Then
+                    AnalyticsId = ""
+                    For a = 0 To reMatch.count - 1
+                        If (a <> 0) Then
+                            AnalyticsId = AnalyticsId & "," & reMatch.item(a).Value
+                        Else
+                            AnalyticsId = AnalyticsId & reMatch.item(a).Value
+                        End If
+                    Next
+                    Cells(i, 7).Value = AnalyticsId
+                    Cells(i, 7).Interior.ColorIndex = 0
+
+                End If
+                Set reMatch = Nothing
+
+            End If
+        Next
+
+        'Set ScriptObject = objIE.document.createElement("SCRIPT")
+        'ScriptObject.Type = "text/javascript"
+        'ScriptText = "window.onerror = function(e){ document.title = 'エラー';console.log('エラー');}"
+        'ScriptObject.text = ScriptText
+        'Call objIE.document.head.appendChild(ScriptObject)
+       'Set ScriptObject = Nothing
+
+        'タイトルタグのチェック
+        tmp = objIE.document.getElementsByTagName("title")(0).InnerText
+        Cells(i, 2) = tmp
+        Cells(i, 2).Interior.ColorIndex = 0
+        'tmp = ""
+
+        'tmp = objIE.document.getElementsByTagName("h1")(0).InnerText
+        'Cells(i, 9) = tmp
+        'Cells(i, 9).Interior.ColorIndex = 0
+        tmp = ""
+
+        End With
+
+        For c = 2 To endcol
+          If Cells(i, c).Value = "" Then
+            Cells(i, c) = "未設定"
+            Cells(i, c).Interior.ColorIndex = 22
+          End If
+        Next
+
+        'CPU不可軽減
+        Sleep 1
+
+        Next
+        objIE.Quit
+        Set objIE = Nothing
+        MsgBox "すべての処理が完了しました"
+    End If
+
+End Sub
+
+Sub 指定WEBページからスクレイピング()
+    Dim objIE As Object, i As Long, k As Long, endnum As Integer, htm As Object, n As Integer, tmp As String
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    'MsgBox endnum
+    If endnum > 0 Then
+
+        For i = 2 To endnum
+        Set objIE = CreateObject("InternetExplorer.Application")
+        With objIE
+        .navigate Cells(i, 1)
+        While .busy Or .readystate <> 4: DoEvents: Wend
+        n = objIE.document.getElementsByTagName("meta").Length
+        'MsgBox objIE.Document.All(0).InnerHTML
+        For k = 0 To n - 1
+            tmp = objIE.document.getElementsByTagName("meta")(k).name
+            If InStr(tmp, "description") > 0 Then
+                Cells(i, 3) = objIE.document.getElementsByTagName("meta")(k).Content
+            ElseIf InStr(tmp, "keywords") > 0 Then
+                Cells(i, 4) = objIE.document.getElementsByTagName("meta")(k).Content
+            ElseIf InStr(tmp, "Description") > 0 Then
+                Cells(i, 3) = objIE.document.getElementsByTagName("meta")(k).Content
+            ElseIf InStr(tmp, "Keywords") > 0 Then
+                Cells(i, 4) = objIE.document.getElementsByTagName("meta")(k).Content
+            ElseIf InStr(tmp, "DESCRIPTION") > 0 Then
+                Cells(i, 3) = objIE.document.getElementsByTagName("meta")(k).Content
+            ElseIf InStr(tmp, "KEYWORDS") > 0 Then
+                Cells(i, 4) = objIE.document.getElementsByTagName("meta")(k).Content
+            End If
+        Next
+
+        tmp = objIE.document.getElementsByTagName("title")(0).InnerText
+        Cells(i, 2) = tmp
+
+        tmp = ""
+
+        End With
+        objIE.Quit
+        Set objIE = Nothing
+        Next
+
+        MsgBox "すべての処理が完了しました"
+    End If
+
+End Sub
+
+Sub ファイルを移動バッチ作成()
+    Dim moveto As String, thispath As String, putfilepath As String
+    thispath = IIf(Range("B1").Value <> "", Range("B1").Value, "C:\Users\USERNAME\Desktop\work\書き出し\*")
+    moveto = Range("B2").Value
+    putfilepath = "C:\short"
+
+    If moveto = "" Then
+    MsgBox "移動先が空欄です"
+    Else
+    str = "move " & thispath & " " & moveto
+    Call fileoutput_fullpath(putfilepath & "\put.bat", FreeFile, str)
+    End If
+
+End Sub
+
+
+Sub getImgtohtml()
+    Dim picFile As String, p As Object, w As Integer, h As Integer, endnum As Integer, i As Integer, src As String, href As String, wraptag As String
+    Dim alt As String, half As Boolean, size As Boolean, size_html As String
+
+    half = Range("G4")
+    size = Range("G6")
+    endnum = getEndRow(1, 1)
+    Call clearRow(2, 6)
+    For i = 2 To endnum Step 1
+    'picFile = Dir(Cells(i, 1).Value)
+    Cells(i, 1).Value = Replace(Cells(i, 1), " ", "")
+
+    picFile = Cells(i, 1)
+    wraptag = IIf(Cells(i, 2).Value <> "<>", Cells(i, 2), "")
+    If picFile = "False" Or picFile = "" Then Exit Sub
+    'Cells(i, 5).Value = picFile
+    If picFile <> "" Then
+
+    Set p = LoadPicture(picFile)
+    w = Application.RoundDown(p.Width * 0.0378, 1)
+    h = Application.RoundDown(p.Height * 0.0378, 1)
+    src = Cells(i, 4)
+    href = Cells(i, 3)
+    alt = Cells(i, 5)
+
+    w = IIf(half = True, Int(w / 2), w)
+    h = IIf(half = True, Int(h / 2), h)
+
+    If size = True Then
+        size_html = " width=""" & w & """ height=""" & h & """ "
+    Else
+        size_html = ""
+    End If
+
+
+    If href <> "" Then
+        Cells(i, 6).Value = wraptag & getatag2(href) & "<img src=""" & src & """" & size_html & "alt=""" & alt & """ />" & getatag2() & getendtag(wraptag)
+    Else
+        Cells(i, 6).Value = wraptag & "<img src=""" & src & """" & size_html & "alt=""" & alt & """ />" & getendtag(wraptag)
+    End If
+    End If
+
+    Next
+
+
+End Sub
+
+Sub insertCell()
+    Call getsrcpath
+    Call getImgtohtml
+End Sub
+
+
+
+Public Sub getsrcpath()
+    Dim wsh, path As Object, strguide As String, buf As String, i As Long, srcpath As String
+    i = 1
+
+    strguide = "フォルダを指定してください　"
+    Set wsh = CreateObject("Shell.Application")
+    Set path = wsh.BrowseForFolder(0, strguide, 0)
+
+    If Not path Is Nothing Then
+    srcpath = path.Items.item.path & "\"
+    Else
+    srcpath = ""
+    Set wsh = Nothing
+    Set path = Nothing
+    End If
+
+    'MsgBox srcpath & "_\"
+    'buf = Dir(srcpath & "_\*")
+    'Dim b As String
+
+    srcpath = Replace(srcpath, " ", "")
+    buf = Dir(srcpath & "\*.*", vbNormal)
+    Call clearRow(2, 1)
+    Call clearRow(2, 4)
+    Do While buf <> ""
+
+    i = i + 1
+    'b = b & buf & vbCrLf
+    Cells(i, 1) = srcpath & buf
+    Cells(i, 4) = Cells(2, 7) & buf
+
+    buf = Dir()
+    Loop
+    'MsgBox b
+
+End Sub
+
+
+Sub ファイルのリストを抽出()
+    Dim i As Integer, buf As String, urlstr As String, srcpath As String
+
+    urlstr = Range("C2").Value & "/"
+
+    srcpath = InputBox("抽出フォルダを指定してください")
+
+    srcpath = Replace(srcpath, " ", "")
+
+    buf = Dir(srcpath & "\*.html", vbNormal)
+    Call clearRow(2, 1)
+    i = 1
+    Do While buf <> ""
+    i = i + 1
+    Cells(i, 1).Value = urlstr & buf
+    buf = Dir()
+    Loop
+
+
+End Sub
+
+
+
+
+Public Sub cleanRows(a As Integer, b As Integer, Optional c As Integer = 1)
+    Dim i As Integer
+    a = IIf(a = 0, 1, a)
+    b = IIf(b = 0, 1, b)
+    For i = a To b Step 1
+        Call clearRow(c, i)
+    Next
+End Sub
+
+
+
+Sub 並び替え()
+    'セル範囲"A1:B100"を2列目をキーにして昇順にソート
+     Dim n, c
+     n = getEndRow(2, 1)
+     c = getEndCol(2, 1)
+     Range(Cells(2, 1), Cells(n, 1)) _
+     .Sort Key1:=Cells(2, 1), order1:=xlAscending
+     Range(Cells(2, 2), Cells(n, c)) _
+     .Sort Key1:=Cells(2, 2), order1:=xlAscending
+End Sub
+
+
+Sub 読み込みファイルリスト()
+    Dim FSO As Object, endnum As Integer, REsrc As String, REhref As String, dirpath As String
+    Dim src As String, buf As String, arrPath(100) As String, idx As Integer, count As Integer
+    Dim newpath As String
+
+    count = 1
+    idx = 2
+    REsrc = "src=""([^""]+)"
+    REhref = "link.+href=""([^""]+)"
+    endnum = Cells(Rows.count, 3).End(xlUp).Row
+    For i = 2 To endnum
+        Cells(i, 2) = ""
+        Cells(i, 2).Interior.ColorIndex = 0
+        Cells(i, 3) = ""
+        Cells(i, 3).Interior.ColorIndex = 0
+    Next
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+
+    If endnum > 0 Then
+
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+
+    For i = 2 To endnum
+        Cells(i, 2) = ""
+        Cells(i, 2).Interior.ColorIndex = 0
+        arrPath(count) = Cells(i, 2)
+        count = count + 1
+    Next
+
+    For i = 2 To endnum
+        If Dir(Cells(i, 1)) <> "" Then
+         src = getFile_ENCODE(Cells(i, 1))
+         buf = convertSelectText(src, REsrc)
+         buf = buf & convertSelectText(src, REhref)
+         Dim t As Variant, tmpArr As Variant
+         dirpath = get_dir_path(Cells(i, 1))
+         tmpArr = Split(buf, vbCrLf)
+         For Each t In tmpArr
+            't = Replace(t, "/", "", 1, 1)
+            t = Replace(t, "/", "\")
+
+            newpath = dirpath & t
+
+            If t <> "" Then
+            Cells(idx, 2).Value = newpath
+            End If
+
+            If InStr(t, "?") > 0 Or InStr(t, "(") > 0 Or InStr(t, ")") > 0 Or InStr(t, "<") > 0 Or InStr(t, ">") > 0 Then
+                Cells(idx, 3).Value = "存在しませんでした"
+                Cells(idx, 3).Interior.ColorIndex = 3
+            Else
+
+                If Dir(newpath) <> "" And t <> "" Then
+                    Cells(idx, 3).Value = "存在しました"
+                    Cells(idx, 3).Interior.ColorIndex = 20
+
+                Else
+                    If t <> "" Then
+                    Cells(idx, 3).Value = "存在しませんでした"
+                    Cells(idx, 3).Interior.ColorIndex = 3
+                    End If
+
+                End If
+            End If
+
+
+           idx = idx + 1
+
+         Next
+
+        Else
+        Cells(i, 1).Interior.ColorIndex = 3
+        End If
+    Next
+
+
+    End If
+
+    '開発中
+
+End Sub
+
+Sub 外部ファイルから文字列を抽出して別ファイルに出力()
+    Dim wsh, path As Object, srcpath As String, strguide As String, filename As Variant
+    Dim RE As String, encode As String, buf As String
+    Dim i As Integer
+
+    encode = Cells(2, 2)
+
+
+    ChDrive "C"
+    ChDir "C:\Users\USERNAME\Desktop\REPLACE"
+
+    RE = Cells(2, 1)
+
+    filename = _
+        Application.GetOpenFilename( _
+        FileFilter:="すべてのテキストファイル , *.txt;*.html;" _
+           , FilterIndex:=1 _
+           , title:="抽出を実行するテキストファイルを指定してください" _
+           , MultiSelect:=False _
+            )
+
+    If filename <> False Then
+    srcpath = filename
+
+    buf = convertSelectText(getFile_ENCODE(srcpath, encode), RE)
+    srcpath = Replace(srcpath, ".", "_select.")
+    Call fileoutput(srcpath, FreeFile, buf)
+
+    MsgBox "抽出完了しました。"
+    Else
+    MsgBox "抽出キャンセルしました。"
+
+    End If
+
+End Sub
+
+Sub ファイルの存在チェックローカル()
+    Dim path As String, endnum As Integer, filename As String
+    endnum = getEndRow(1, 1)
+    'code = Range("E2")
+
+    Call clearRow(2, 2)
+    Call セル背景リセット("A2", "B")
+
+    For i = 2 To endnum
+        '読み込み先が存在する場合色を青
+        If Cells(i, 1) <> "" Then
+            filename = Cells(i, 1).Value
+
+            If isDir(filename) <> "" Then
+
+            Cells(i, 2).Value = "ファイル存在しました"
+            Cells(i, 2).Interior.ColorIndex = 34
+            Else
+            Cells(i, 2).Value = "ファイル存在しません"
+            Cells(i, 2).Interior.ColorIndex = 3
+
+            End If
+
+        Else
+        '読み込みファイルが存在しない場合背景グレー
+            Cells(i, 1).Interior.ColorIndex = 15
+            Cells(i, 2).Value = "ファイルパスが記述されていません"
+            Cells(i, 2).Interior.ColorIndex = 3
+
+        End If
+
+    Next
+    MsgBox "処理が完了しました"
+
+End Sub
+
+Sub 外部ファイルの存在チェック()
+
+Dim objIE As Object, FSO As Object, i As Long, k As Long, endnum As Integer, htm As Object, n As Integer, ttl As String
+Dim oReq As Object
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    'MsgBox endnum
+    If endnum > 0 Then
+
+        Set FSO = CreateObject("Scripting.FileSystemObject")
+        Set objIE = CreateObject("InternetExplorer.Application")
+            objIE.Visible = False
+        For i = 2 To endnum
+            Cells(i, 2) = ""
+            Cells(i, 2).Interior.ColorIndex = 0
+        Next
+
+        For i = 2 To endnum
+
+        If InStr(Cells(i, 1), "http:") <> 0 Then
+
+            If InStr(Cells(i, 1), ".jpg") <> 0 Or InStr(Cells(i, 1), ".png") <> 0 Or InStr(Cells(i, 1), ".gif") <> 0 Or InStr(Cells(i, 1), ".js") <> 0 Then
+                Set oReq = CreateObject("MSXML2.XMLHTTP")
+                oReq.Open "GET", Cells(i, 1), False
+                oReq.Send
+                If oReq.Status = 200 Then
+                Cells(i, 2) = "存在しました"
+                Cells(i, 2).Interior.ColorIndex = 20
+                Else
+                Cells(i, 2) = "リンク切れ"
+                Cells(i, 2).Interior.ColorIndex = 22
+                End If
+
+            Else
+
+            With objIE
+            .navigate Cells(i, 1)
+            While (.busy = True Or .readystate <> 4)
+                DoEvents
+            Wend
+
+            ttl = IIf(.document.getElementsByTagName("title") <> "", .document.getElementsByTagName("title")(0).InnerText, "error")
+            ttl = LCase(ttl)
+
+            If InStr(ttl, "できません") <> 0 Or InStr(ttl, "error") <> 0 Or InStr(ttl, "404") <> 0 Or InStr(ttl, "未検出") Or InStr(ttl, "500") Or InStr(ttl, "503") Or InStr(ttl, "403") Or InStr(ttl, "400") Then
+            Cells(i, 2) = "リンク切れ"
+            Cells(i, 2).Interior.ColorIndex = 22
+
+            Else
+            Cells(i, 2) = "存在しました"
+            Cells(i, 2).Interior.ColorIndex = 20
+
+            End If
+            End With
+
+            'With objIE
+            '.navigate Cells(i, 1)
+            'While (.Busy Or .readyState <> 4): DoEvents: Wend
+
+            'ttl = .Document.getElementsByTagName("title")(0).InnerText
+
+            'Cells(i, 2) = ttl
+            'Cells(i, 2).Interior.ColorIndex = 20
+            'End With
+
+
+            End If
+
+        Else
+
+            If FSO.FileExists(Cells(i, 1)) Then
+            Cells(i, 2) = "存在しました"
+            Cells(i, 2).Interior.ColorIndex = 20
+            Else
+            Cells(i, 2) = "存在しませんでした"
+            Cells(i, 2).Interior.ColorIndex = 22
+            End If
+        End If
+
+        'CPU不可軽減
+        Sleep 1
+
+        Next
+
+        Set FSO = Nothing
+        objIE.Quit
+        Set objIE = Nothing
+    End If
+
+End Sub
+
+Sub 複数テンプレートからソース生成()
+    Dim endnum As Integer
+    Dim savefilename As String
+    Dim tempfile As String, rownum As Integer, colnum As Integer
+    Dim tempnewbuf As String
+    Dim repeatnewbuf As String
+    Dim tempfilename As String, OutputPath As String, InputPathInit As String
+    Dim i As Integer, k As Integer
+    Dim thispath As String
+
+
+    thispath = getthisfilepath()
+
+
+    ChDir thispath
+
+    'テンプレート格納ディレクトリパスを設定
+    Dim Shell As Object, InputPathObj As Object
+    Set Shell = CreateObject("Shell.Application")
+    Set InputPathObj = Shell.BrowseForFolder(&O0, "テンプレート格納フォルダを選んでください", &H1 + &H10, thispath)
+    If Not InputPathObj Is Nothing Then
+    InputPathInit = InputPathObj.Items.item.path
+    Else
+    MsgBox "キャンセルしました"
+    Exit Sub
+    End If
+
+
+    Set InputPathObj = Nothing
+
+    '出力するディレクトリを設定
+    Dim OutputPathObj As Object
+    Set OutputPathObj = Shell.BrowseForFolder(&O0, "出力するフォルダを選んでください", &H1 + &H10, thispath)
+    If Not OutputPathObj Is Nothing Then
+    OutputPath = OutputPathObj.Items.item.path
+    Else
+    MsgBox "キャンセルしました"
+    Exit Sub
+    End If
+
+    Set Shell = Nothing
+    Set OutputPathObj = Nothing
+
+    '出力するファイル名を設定（デフォルトはoutput.html）
+    savefilename = InputBox(Prompt:="出力するファイル名を入力してください", Default:="output.html")
+    savefilename = IIf(savefilename <> "", savefilename, "output.html")
+    savefilename = "\" & savefilename
+    OutputPath = OutputPath & savefilename
+
+    'テンプレートファイル名を設定
+    'tempfilename = Application.GetOpenFilename( _
+    '    FileFilter:="すべてのテキストファイル , *.txt;*.html" _
+    '       , FilterIndex:=1 _
+    '       , title:="テンプレートファイル名を入力してください" _
+    '       , MultiSelect:=False _
+    '        )
+
+    'repeattempfile = getFile_ENCODE(tempfilename, "AUTO")
+
+    'データ抽出エリア設定
+
+    rownum = getEndRow(1, 1)
+
+
+    '出力データ生成（たて）
+    For i = 2 To rownum Step 1
+        If Cells(i, 1) <> "" Then
+        Dim InputPath As String
+        InputPath = InputPathInit & "\" & Cells(i, 1)
+        If Dir(InputPath) <> "" Then
+        Dim repeattempfile As String
+        repeattempfile = getFile_ENCODE(InputPath, "AUTO")
+
+        'ファイルが存在しない場合はそのまま継承
+        End If
+
+        End If
+        Dim tempbuf As String
+        tempbuf = repeattempfile
+        colnum = getEndCol(i, 1)
+        '出力データ生成(横)
+        For k = 2 To colnum Step 1
+            tempbuf = ReplaceFormat(tempbuf, Cells(1, k), Cells(i, k))
+
+        Next
+
+        '整形したテンプレートをバッファに出力（一時ファイル生成）
+       tempnewbuf = Echo(i, tempnewbuf & isNewline(False) & tempbuf & isNewline(False))
+       tempbuf = ""
+
+    Next
+
+
+    'データ出力
+    Call fileoutput(OutputPath, FreeFile, tempnewbuf)
+
+    MsgBox "出力が完了しました"
+
+End Sub
+
+Sub 指定WEBページの指定タグ箇所を確認する()
+
+    Dim objIE As Object, i As Long, k As Long, endnum As Integer, htm As Object, n As Integer, endcol As Integer
+    Dim c As Integer, a As Integer
+
+    Dim tmp As Variant
+    Dim tmpobj As Object
+    Dim tmp_title As Variant
+    Dim tagtmp As String
+    Dim Reg As Object, strPattern As String, reMatch As Object
+    Dim AnalyticsId As String
+    Dim ScriptObject As Object, ScriptText As String
+    Range("B2:H999").Interior.ColorIndex = 0
+
+    Set Reg = CreateObject("VBScript.RegExp")
+    strPattern = "(UA-[0-9|-]+)"
+    Reg.Global = True
+    Reg.pattern = strPattern
+
+    endnum = Cells(Rows.count, 1).End(xlUp).Row
+    endcol = getEndCol(1, 1)
+
+    If endnum > 0 Then
+        'セルのリセット
+        Set objIE = CreateObject("InternetExplorer.Application")
+        For i = 2 To endnum
+            For c = 2 To endcol
+                Cells(i, c) = ""
+                Cells(i, c).Interior.ColorIndex = 0
+            Next
+
+        With objIE
+        .navigate Cells(i, 1)
+        .Visible = False
+        While .busy Or .readystate <> 4: DoEvents: Wend
+
+        'meta Descriptionタグのチェック
+           Set tmpobj = objIE.document.getElementsByTagName("meta")
+
+
+        For Each t In tmpobj
+
+            If t.getAttribute("name") = "description" Or t.getAttribute("name") = "Description" Or t.getAttribute("name") = "DESCRIPTION" Then
+                Cells(i, 3) = t.getAttribute("content")
+                Cells(i, 3).Interior.ColorIndex = 0
+            'meta Keywordsタグのチェック
+            ElseIf t.getAttribute("name") = "keywords" Or t.getAttribute("name") = "Keywords" Or t.getAttribute("name") = "KEYWORDS" Then
+                Cells(i, 4) = t.getAttribute("content")
+                Cells(i, 4).Interior.ColorIndex = 0
+            'meta Robotsタグのチェック
+            ElseIf t.getAttribute("name") = "robots" Or t.getAttribute("name") = "Robots" Or t.getAttribute("name") = "ROBOTS" Then
+                tagtmpobj = t.getAttribute("content")
+                If InStr(tagtmpobj, "no") > 0 Then
+                    Cells(i, 7) = "インデックスされません"
+                Else
+                Cells(i, 8) = tagtmpobj
+                Cells(i, 8).Interior.ColorIndex = 0
+                End If
+            End If
+
+            'meta og:titleタグのチェック
+            If t.getAttribute("property") = "og:title" Then
+                Cells(i, 9) = t.getAttribute("content")
+                Cells(i, 9).Interior.ColorIndex = 0
+            'meta og:typeタグのチェック
+            ElseIf t.getAttribute("property") = "og:type" Then
+                Cells(i, 10) = t.getAttribute("content")
+                Cells(i, 10).Interior.ColorIndex = 0
+            'meta og:urlタグのチェック
+            ElseIf t.getAttribute("property") = "og:url" Then
+                Cells(i, 11) = t.getAttribute("content")
+                Cells(i, 11).Interior.ColorIndex = 0
+            'meta og:imageタグのチェック
+            ElseIf t.getAttribute("property") = "og:image" Then
+                Cells(i, 12) = t.getAttribute("content")
+                Cells(i, 12).Interior.ColorIndex = 0
+            'meta og:descriptionタグのチェック
+            ElseIf t.getAttribute("property") = "og:description" Then
+                Cells(i, 13) = t.getAttribute("content")
+                Cells(i, 13).Interior.ColorIndex = 0
+            'meta og:site_nameタグのチェック
+            ElseIf t.getAttribute("property") = "og:site_name" Then
+                Cells(i, 14) = t.getAttribute("content")
+                Cells(i, 14).Interior.ColorIndex = 0
+            End If
+
+        Next t
+
+        Set tmpobj = objIE.document.getElementsByTagName("link")
+        For Each t In tmpobj
+            If StrConv(t.getAttribute("rel"), vbLowerCase) = "canonical" Then
+                Cells(i, 5) = t.getAttribute("href")
+                Cells(i, 5).Interior.ColorIndex = 0
+            ElseIf StrConv(t.getAttribute("rel"), vbLowerCase) = "dns-prefetch" Then
+                Cells(i, 15) = t.getAttribute("href")
+                Cells(i, 15).Interior.ColorIndex = 0
+            ElseIf StrConv(t.getAttribute("rel"), vbLowerCase) = "preconnect" Then
+                Cells(i, 16) = t.getAttribute("href")
+                Cells(i, 16).Interior.ColorIndex = 0
+            End If
+        Next t
+        'n = objIE.document.getElementsByTagName("link").Length
+        'canonicalタグのチェック
+
+
+        'For k = 0 To n - 1
+        '    tmp = objIE.document.getElementsByTagName("link")(k).rel
+        '    If InStr(tmp, "canonical") > 0 Or InStr(tmp, "CANONICAL") > 0 Or InStr(tmp, "Canonical") > 0 Then
+         '       Cells(i, 5) = objIE.document.getElementsByTagName("link")(k).href
+         '      Cells(i, 5).Interior.ColorIndex = 0
+         '   End If
+        'Next
+
+        'アナリティクスタグのチェック
+        '旧ロジック For Eachを使うべき
+        n = objIE.document.getElementsByTagName("script").Length
+
+        For k = 0 To n - 1
+            tmp = objIE.document.getElementsByTagName("script")(k).src
+            If InStr(tmp, "analytics") > 0 Then
+                Cells(i, 6) = "読み込まれています"
+                Cells(i, 6).Interior.ColorIndex = 0
+
+                tmp = objIE.document.all(0).outerHTML
+                Set reMatch = Reg.Execute(tmp)
+                If reMatch.count > 0 Then
+                    AnalyticsId = ""
+                    For a = 0 To reMatch.count - 1
+                        If (a <> 0) Then
+                            AnalyticsId = AnalyticsId & "," & reMatch.item(a).Value
+                        Else
+                            AnalyticsId = AnalyticsId & reMatch.item(a).Value
+                        End If
+                    Next
+                    Cells(i, 7).Value = AnalyticsId
+                    Cells(i, 7).Interior.ColorIndex = 0
+
+                End If
+                Set reMatch = Nothing
+
+            End If
+        Next
+
+        'タイトルタグのチェック
+        tmp_title = objIE.document.title
+        If tmp_title <> "" Then
+
+        Cells(i, 2) = tmp_title
+        Cells(i, 2).Interior.ColorIndex = 0
+        End If
+        tmp = ""
+        End With
+
+        For c = 2 To endcol
+          If Cells(i, c).Value = "" Then
+            Cells(i, c) = "未設定"
+            Cells(i, c).Interior.ColorIndex = 22
+          End If
+        Next
+
+        'CPU不可軽減
+        Sleep 1
+
+        Next
+        objIE.Quit
+        Set objIE = Nothing
+        Set tmpobj = Nothing
+        MsgBox "すべての処理が完了しました"
+    End If
+
+End Sub
+
+Sub チェックターゲットシートと合っているか確認()
+    Dim readSheet, endcol As Integer, endrow As Integer
+    Dim selectList As Variant
+    Dim selectdisc As String
+    Dim selectsheetName As String
+    Dim keyItem As String
+    Dim n As Integer, k As Integer
+    Dim keyItemCell As Range
+    Dim checkItemCell As Range
+    Dim searchItemCell As Range
+
+    keyItem = UserForm2.TextBox1.text
+    selectdisc = UserForm2.TextBox2.text
+    selectsheetName = UserForm2.TextBox3.text
+    Set readSheet = Worksheets(selectsheetName)
+
+    '現在のページのKEY項目のアドレス
+    Set keyItemCell = Cells.Find(What:=(keyItem), LookIn:=xlValues, LookAt:=xlWhole)
+    endrow = getEndRow(keyItemCell.Row, 1)
+    selectList = Split(selectdisc, ",")
+
+    For n = 2 To endrow
+        For k = 0 To UBound(selectList)
+            Dim searchItemName As String, searchItemRange As Range, searchItem As String
+            searchItemName = selectList(k)
+            Set searchItemCell = Cells.Find(What:=(searchItemName), LookIn:=xlValues, LookAt:=xlWhole)
+            If Not searchItemCell Is Nothing Then
+            searchItem = Cells(n, searchItemCell.Column)
+            Cells(n, searchItemCell.Column).Interior.ColorIndex = 2
+            'ここからターゲットシートの情報
+            Dim selectItemCol As Integer, selectItemRow As Integer, keyItemRow
+            keyItemRow = Cells(n, 1)
+
+            Set checkItemCell = readSheet.Cells.Find(What:=(searchItemName), LookIn:=xlValues, LookAt:=xlWhole)
+            Set keyItemCell = readSheet.Cells.Find(What:=(keyItemRow), LookIn:=xlValues, LookAt:=xlWhole)
+
+            If Not checkItemCell Is Nothing And Not keyItemCell Is Nothing Then
+                'セルの存在チェック
+                '照合して同じであれば青に変更
+                If searchItem = readSheet.Cells(keyItemCell.Row, checkItemCell.Column).Value Then
+                   Cells(n, searchItemCell.Column).Interior.ColorIndex = 20
+                Else
+                '違う場合は赤に変更
+                    Cells(n, searchItemCell.Column).Interior.ColorIndex = 3
+                End If
+            End If
+
+            End If
+        Next
+    Next
+    Set checkItemCell = Nothing
+    Set keyItemCell = Nothing
+    Set searchItemCell = Nothing
+    Set readSheet = Nothing
+
+    MsgBox "チェック完了しました"
+
+
+End Sub
+
+Sub 確認情報設定パネル表示()
+    UserForm2.Show
+End Sub
+
+Sub テンプレートからソース生成()
+    Dim endnum As Integer
+    Dim savefilename As String
+    Dim tempfile As String, rownum As Integer, colnum As Integer
+    Dim tempbuf As String, tempnewbuf As String, repeattempfile As String
+    Dim repeatnewbuf As String
+    Dim tempfilename As String, OutputPath As String
+    Dim i As Integer, k As Integer
+    Dim thispath As String
+
+    thispath = getthisfilepath()
+
+
+    ChDir thispath
+
+    '出力するディレクトリを設定
+    Dim Shell As Object, OutputPathObj As Object
+    Set Shell = CreateObject("Shell.Application")
+    Set OutputPathObj = Shell.BrowseForFolder(&O0, "出力するフォルダを選んでください", &H1 + &H10, thispath)
+    If Not OutputPathObj Is Nothing Then
+    OutputPath = OutputPathObj.Items.item.path
+    Else
+    MsgBox "キャンセルしました"
+    Exit Sub
+    End If
+
+    Set Shell = Nothing
+    Set OutputPathObj = Nothing
+
+    '出力するファイル名を設定（デフォルトはoutput.html）
+    savefilename = InputBox(Prompt:="出力するファイル名を入力してください", Default:="output.html")
+    savefilename = IIf(savefilename <> "", savefilename, "output.html")
+    savefilename = "\" & savefilename
+    OutputPath = OutputPath & savefilename
+
+
+
+    'テンプレートファイル名を設定
+    tempfilename = Application.GetOpenFilename( _
+        FileFilter:="すべてのテキストファイル , *.txt;*.html" _
+           , FilterIndex:=1 _
+           , title:="テンプレートファイル名を入力してください" _
+           , MultiSelect:=False _
+            )
+
+    repeattempfile = getFile_ENCODE(tempfilename, "AUTO")
+
+    'データ抽出エリア設定
+
+    rownum = getEndRow(1, 1)
+
+    '出力データ生成（たて）
+    For i = 2 To rownum Step 1
+        If Cells(i, 1) <> "" Then
+        If Dir(Cells(i, 1)) <> "" Then
+        repeattempfile = getFile_ENCODE(Cells(i, 1), "AUTO")
+        MsgBox Cells(i, 1)
+        'ファイルが存在しない場合はそのまま継承
+        End If
+
+        End If
+        tempbuf = repeattempfile
+        colnum = getEndCol(i, 1)
+        '出力データ生成(横)
+        For k = 2 To colnum Step 1
+            tempbuf = ReplaceFormat(tempbuf, Cells(2, k), Cells(i, k))
+
+        Next
+
+        '整形したテンプレートをバッファに出力（一時ファイル生成）
+       tempnewbuf = Echo(i, tempnewbuf & isNewline(False) & tempbuf & isNewline(False))
+       tempbuf = ""
+
+    Next
+
+
+    'データ出力
+    Call fileoutput(OutputPath, FreeFile, tempnewbuf)
+
+    MsgBox "出力が完了しました"
+
+End Sub
+
+Sub 抽出用DBからデータをSELECT()
+    Dim endnum As Integer, readSheet As Object
+
+    Set readSheet = Worksheets("抽出用DB")
+
+    endnum = getEndRow(1, 1)
+    For i = 2 To endnum Step 1
+        Dim searchItem As String, FindItem As Object
+        searchItem = Cells(i, 1)
+        Set FindItem = readSheet.Cells.Find(What:=(searchItem), LookIn:=xlValues, LookAt:=xlWhole)
+        If Not FindItem Is Nothing Then
+            Dim cellnum As Integer, lastCell As Integer
+
+            cellnum = Mid(FindItem.Address(False, False), 2)
+            lastCell = readSheet.Cells(cellnum, Columns.count).End(xlToLeft).Column
+
+            For k = 2 To lastCell
+                Cells(i, k) = readSheet.Cells(cellnum, k)
+            Next
+
+        End If
+
+
+    Next
+
+End Sub
+
+'ディレクトリ作成
+Sub CheckparentFolder(TargetFolder)
+    Dim ParentFolder As String, FSO As Object
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    ''調査対象フォルダの、親フォルダ名を取得する
+    ParentFolder = FSO.GetParentFolderName(TargetFolder)
+    If Not FSO.FolderExists(ParentFolder) Then
+        ''親フォルダが存在しなかったら、
+        ''親フォルダを新しい対象フォルダとして
+        ''自分自身(Sub CheckparentFolder)を呼び出す
+        Call CheckparentFolder(ParentFolder)
+    End If
+    ''新しいフォルダを作る
+    FSO.CreateFolder TargetFolder
+    Set FSO = Nothing
+End Sub
+
+
+
+Sub アクティブシート上の図形を一括削除する()
+  Dim shp As Shape
+
+  For Each shp In ActiveSheet.Shapes
+    shp.Delete
+  Next shp
+
+End Sub
+
+
+Sub 不要ファイル以外抽出()
+Dim endnum As Integer, i As Integer
+Dim RE, strPattern As String, r As Range
+
+Set RE = CreateObject("VBScript.RegExp")
+
+    For i = 2 To endnum Step 1
+        If Cells(i, 1) <> "" Then
+        strPattern = "src=""([^""]+)"
+        With RE
+        .pattern = strPattern
+        .Global = True
+        For Each r In ActiveSheet.UsedRange
+
+        Next r
+
+        End With
+
+        strPattern = "href=""([^""]+\.css)"
+        With RE
+        .pattern = strPattern
+        .Global = True
+        For Each r In ActiveSheet.UsedRange
+
+        Next r
+
+        End With
+
+
+        End If
+    Next
+    Set RE = Nothing
+
+End Sub
+
+
+Sub 文字コード変換後CSV保存()
+Dim stream
+Dim i As Long
+Dim k As Long
+Dim csvStr As String
+Dim endrow As Long
+Dim endcol As Long
+Dim deri As String
+
+
+endrow = getEndRow(1, 1)
+endcol = getEndCol(1, 1)
+
+Const adTypeText = 2 ' ストリームタイプ（テキスト）
+Const adSaveCreateOverWrite = 2 ' ファイル書き込みモード（既存ファイル上書き）
+
+' ADODBストリームをテキスト（文字コード：UFT-8）でオープン
+Set stream = CreateObject("ADODB.Stream")
+stream.Open
+stream.Type = adTypeText
+stream.Charset = "UTF-8"
+
+' 10行分CSVデータを書き込み
+For i = 1 To endrow
+    csvStr = ""
+    For k = 1 To endcol
+    ' 改行コードは自前で挿入する必要あり
+    deri = IIf(k = endcol, "", ",")
+    csvStr = csvStr & """" & Cells(i, k) & """" & deri
+
+    '１行書き込み（改行コードも書き込み）
+    ' ★ 勝手に改行コードが付与されると思っていたが、どうやら違うらしい
+
+    Next
+    csvStr = csvStr & vbCrLf
+    stream.WriteText csvStr, adWriteLine
+Next
+
+'CSVデータをファイルに保存する（既存ファイルは上書き）
+stream.SaveToFile ("C:\filepath\csv\utf8_encorded.csv"), adSaveCreateOverWrite
+
+'ストリームを閉じる
+stream.Close
+
+Set stream = Nothing
+End Sub
+
+'----------------------------------------------------------------------------------------------------------------------
+'                                                    FUNCTIONS
+'----------------------------------------------------------------------------------------------------------------------
+Sub セル背景リセット(Optional x As String = "A2", Optional y As String = "E")
+    Range(x & ":" & y & Rows.count).ClearFormats
+End Sub
+'---------------------------------------------配列から空要素削除
+Function ArrayEmptyDelete(myArray As Variant) As Variant
+
+     If Not IsArray(myArray) Then ArrayEmptyDelete = Array(): Exit Function
+
+     Dim i As Long
+     Dim myVar As Variant
+     Dim RowData As Variant
+
+     ReDim myVar(UBound(myArray))
+
+     For Each RowData In myArray
+
+          If Not IsEmpty(RowData) Then
+               myVar(i) = RowData
+               i = i + 1
+          End If
+     Next
+     ReDim Preserve myVar(i - 1)
+     ArrayEmptyDelete = myVar
+End Function
+
+'---------------------------------------------パワーシェル実行
+
+Private Function ExecCommand(ByVal command As String) As String
+    Dim objExec As Object, objShell As Object
+
+    Set objExec = CreateObject("Wscript.shell")
+    'Set objShell = objExec.Exec("powershell -NoLogo -ExecutionPolicy RemoteSigned -Command Start-Transcript pslog -append " & command)
+    Set objShell = objExec.Exec("powershell -NoLogo -ExecutionPolicy RemoteSigned -Command " & command)
+    'パワーシェルを直接実行できないので、コマンドプロンプトを実行して、パワーシェルを起動後コマンドを渡している。
+    'なので特定の文字はエスケープする必要がある
+
+    Do While objShell.Status = 0
+        Sleep 100
+    Loop
+
+    ExecCommand = objShell.StdOut.ReadAll
+End Function
+
+
+'---------------------------------------------ファイルパスからディレクトリまでの文字列を取得
+Function get_dir_path(path) As String
+    Dim newpath As String, pos As Integer
+    pos = InStrRev(path, "\")
+    newpath = Left(path, pos)
+    get_dir_path = newpath
+End Function
+
+'---------------------------------------------文字コード判定
+Function CharSetOfText(path) As String
+    'ダミーファイル生成回数が重複しているので修正する必要あり
+    Dim FSO
+    Dim File
+    Dim htmlfile
+    Dim resultCode
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    Set File = FSO.getFile(path)
+    File.name = File.name & ".tmp"
+    Set htmlfile = GetObject(File.path, "htmlfile")
+    Do While htmlfile.readystate <> "complete"
+    Application.Wait Now + TimeSerial(0, 0, 1)
+    Loop
+    resultCode = htmlfile.Charset
+    File.name = FSO.GetBaseName(File.name)
+    Set FSO = Nothing
+    Set htmlfile = Nothing
+    Set File = Nothing
+    CharSetOfText = resultCode
+End Function
+
+
+Public Function Echo(n, str As String)
+    Echo = IIf(n <> 1, str, "")
+End Function
+
+Public Function CheckMeta(str As String)
+    Dim newstr As String
+    newstr = Replace(str, "\", "\\")
+    newstr = Replace(newstr, "^", "\^")
+    newstr = Replace(newstr, "$", "\$")
+    newstr = Replace(newstr, "?", "\?")
+    newstr = Replace(newstr, "*", "\*")
+    newstr = Replace(newstr, "+", "\+")
+    newstr = Replace(newstr, ".", "\.")
+    newstr = Replace(newstr, "|", "\|")
+    newstr = Replace(newstr, "{", "\{")
+    newstr = Replace(newstr, "}", "\}")
+    newstr = Replace(newstr, "[", "\[")
+    newstr = Replace(newstr, "]", "\]")
+    newstr = Replace(newstr, "(", "\(")
+    newstr = Replace(newstr, ")", "\)")
+    CheckMeta = newstr
+End Function
+
+
+Public Function ReplaceFormat(targetStr As String, oldstr As String, newstr As String)
+    Dim str As String
+
+    If InStr(oldstr, ":円") > 0 Then
+        oldstr = Replace(oldstr, ":円", "")
+        If newstr <> "" And newstr <> "　" Then
+            str = Replace(targetStr, oldstr, "'" & "￥" & format(newstr, "0,000") & "'")
+        Else
+            str = Replace(targetStr, oldstr, "''")
+        End If
+
+    ElseIf InStr(oldstr, ":id") > 0 Then
+        oldstr = Replace(oldstr, ":id", "")
+        str = Replace(targetStr, oldstr, "'" & format(newstr, "00") & "'")
+
+    Else
+        If newstr = "" Then
+        newstr = "''"
+        End If
+
+        str = Replace(targetStr, oldstr, newstr)
+    End If
+
+    ReplaceFormat = str
+End Function
+
+'---------------------------------------------文字列を抽出し改行をいれたテキストを出力する
+
+Function convertSelectText(str As String, pattern As String) As String
+    Dim objRE As Object, matches, buf As String, i As Integer
+
+    Set objRE = CreateObject("VBScript.RegExp")
+    objRE.pattern = pattern
+    objRE.Global = True
+    Set matches = objRE.Execute(str)
+    If matches.count > 0 Then
+        For i = 0 To matches.count - 1
+            buf = buf & matches(i).SubMatches(0) & isNewline(False)
+        Next
+    End If
+    Set matches = Nothing
+    Set objRE = Nothing
+
+    convertSelectText = buf
+End Function
+
+
+'---------------------------------------------文字列から数値を削除
+
+Function RemNum(Mytxtcell As String)
+With CreateObject("VBScript.RegExp")
+.pattern = "([0-9]+)"
+.Global = True
+RemNum = .Replace(Mytxtcell, "")
+End With
+End Function
+
+Public Function getatag2(Optional t As String = "")
+    If t <> "" Then
+    getatag2 = "<a href=""" & t & """>"
+    Else
+    getatag2 = "</a>"
+    End If
+End Function
+
+
+'----------------------------------------------------外部ファイルを読み込む
+
+Public Function getFile(p As String) As String
+    Dim buf As String, htm As String
+    If (p <> "") Then
+        Open p For Input As #1
+        Do Until EOF(1)
+        Line Input #1, buf
+        htm = htm & isNewline(False) & buf
+        Loop
+        getFile = htm
+    Close #1
+
+
+    Else
+    getFile = ""
+    End If
+
+End Function
+
+
+'----------------------------------------------------外部ファイルを読み込む(エンコード)
+Public Function getFile_ENCODE(p As String, Optional code As String = "Shift_JIS") As String
+    Dim buf As String, htm As String, inStream As Object
+
+    If (p <> "") Then
+
+        If code = "AUTO" Then
+            code = CharSetOfText(p)
+        End If
+
+        Set inStream = CreateObject("ADODB.Stream")
+        inStream.Charset = code
+        inStream.Type = 2
+        inStream.Open
+        inStream.LoadFromFile p
+        inStream.Position = 0
+
+        buf = inStream.ReadText()
+
+        inStream.Close
+        Set inStream = Nothing
+        getFile_ENCODE = buf
+
+
+    Else
+    getFile_ENCODE = ""
+    End If
+
+End Function
+
+
+
+'getFile_ENCODEと同じと思われるので一旦解除
+'Public Function encode(code As String, str As String) As String
+'    Dim Stream As Object, buf As String
+'
+'    Set Stream = CreateObject("ADODB.Stream")
+'    Stream.mode = 3
+'    Stream.Type = 2
+'    Stream.Charset = code
+'    Stream.Open
+'    Stream.WriteText str, 0
+'    Stream.Position = 0
+'    buf = Stream.ReadText()
+'    Stream.Close
+'    Set Stream = Nothing
+'    encode = buf
+'
+'End Function
+
+
+'----------------------------------------------------文字列の先頭、末尾の改行を削除
+Public Function trimStr(t As String) As String
+    Dim str As String, RE As Object
+    Set RE = CreateObject("VBScript.RegExp")
+    RE.Global = True
+    str = t
+    Do Until Left(str, 1) <> vbCrLf
+    str = Mid(str, 2)
+    Loop
+    Do Until Right(str, 1) <> vbCrLf
+    str = Left(str, Len(str) - 1)
+    Loop
+    Do Until Left(str, 1) <> vbLf
+    str = Mid(str, 2)
+    Loop
+    Do Until Right(str, 1) <> vbLf
+    str = Left(str, Len(str) - 1)
+    Loop
+    Do Until Left(str, 1) <> vbCr
+    str = Mid(str, 2)
+    Loop
+    Do Until Right(str, 1) <> vbCr
+    str = Left(str, Len(str) - 1)
+    Loop
+    RE.pattern = "\n+"
+    str = RE.Replace(str, ",")
+    RE.pattern = "^,+"
+    str = RE.Replace(str, "")
+    RE.pattern = ",+$"
+    str = RE.Replace(str, "")
+    Set RE = Nothing
+    trimStr = str
+End Function
+
+'----------------------------------------------------不要なURL内の文字列を削除
+Public Function deleteStr(t As String) As String
+
+    t = Replace(t, "http://www.example.co.jp/shop/genre/list.html?id=", "")
+    t = Replace(t, "http://www.example.co.jp/shop/item/main.html?cd=", "")
+    t = Replace(t, "http://www.example.co.jp/shop/genre/list.php?id=", "")
+    t = Replace(t, "http://www.example.co.jp/shop/item/main.php?cd=", "")
+    t = Replace(t, "<?php echo $ic_http_home_url; ?>/shop/item/main.php?cd=", "")
+    t = Replace(t, "<?php echo $ic_http_home_url; ?>/shop/genre/list.php?id=", "")
+    deleteStr = t
+End Function
+
+'----------------------------------------------------不要な文字列を削除
+Public Function sliceStr(t) As String
+    t = Replace(t, "genre", "")
+    t = Replace(t, "item", "")
+    sliceStr = t
+End Function
+
+'----------------------------------------------------LCBサーバー内の商品メイン画像URL取得
+Public Function getMainImg(id As String, Optional col As String = "", Optional size As String = "M") As String
+    If col <> "" Then
+    getMainImg = "<?php echo $ic_home_url; ?>/images/item/" & id & "/" & size & textFormat(col, "000") & "M0.jpg"
+    Else
+    getMainImg = ""
+    End If
+End Function
+
+'----------------------------------------------------文字列内のカラー番号取得
+Public Function getColorLink(link As String, Optional col As String = "") As String
+    If col <> "" Then
+    link = link & "&cl=" & col
+    End If
+    getColorLink = link
+End Function
+
+Public Function getKeyandValue(k As String, Optional v As Variant = "") As String
+    If VarType(v) = vbString Then
+    v = """" & v & """"
+    End If
+    getKeyandValue = """" & k & """ : " & v
+End Function
+
+Public Function isNewline(m As Boolean) As Variant
+    If m = False Then
+    isNewline = vbNewLine
+    Else
+    isNewline = ""
+    End If
+End Function
+
+Public Function getStylingLink(id As String, text As String, Optional col As String = "") As String
+    If InStr(Replace(LCase(id), " ", ""), "shoponly") > 0 Then
+    getStylingLink = "<p>" & text & "（SHOP ONLY）</p>"
+    Else
+    getStylingLink = "<p><a href=""<?php echo $items['" & id & col & "']['url']; ?>"" target=""_blank"">" & text & "<span class=""pricebox""><?php echo $items['" & id & col & "']['gprice']; ?><img src=""<?php echo $ic_home_url; ?>/brand/styling2013ss/images/buy.gif"" width=""44"" height=""17"" border=""0"" /></span></a></p>"
+    End If
+End Function
+
+Public Function getCaption(Optional text As String = "") As String
+    If text <> "" Then
+    getCaption = "<p class=""caption"">" & text & "</p>"
+    Else
+    getCaption = ""
+    End If
+End Function
+
+Public Function getvar(id As String, num As Integer, commongen As String) As String
+    Dim tmp As String
+    If commongen <> "" And Not InStr(id, "gid=") > 0 Then
+    id = id & "&wh=G&gid=" & commongen
+    End If
+    tmp = "$itemlist[] = 'cd=" & id
+    If InStr(id, "gid=") > 0 Then
+    id = Left(id, Application.WorksheetFunction.Find("&wh=G&gid=", id) - 1)
+    End If
+    If InStr(id, "&cl=") > 0 Then
+    id = Replace(id, "&cl=", "-")
+    End If
+    getvar = tmp & "'; $item" & textFormat(CStr(num), "00") & " = '" & id & "';  //#" & textFormat(CStr(num), "00")
+End Function
+
+
+Public Function getImg(n As String, i As String, Optional c As String = "") As String
+    Dim img As String, col As String, name As String
+    img = i
+    col = c
+    name = n
+    getImg = "<img src=""<?php echo $ic_itemdetail_img; ?>/" & img & "/M" & textFormat(col, "000") & "M0.jpg"" width=""101"" height=""105"" alt=""" & name & """ onerror=""this.parentNode.parentNode.style.display='none';var p=this.parentNode; this.parentNode.parentNode.removeChild(p);""/>"
+End Function
+
+
+Public Function getfilepath(t) As String
+    getfilepath = ActiveWorkbook.path & "\" & t
+End Function
+
+Public Function getItemPHP(i As String, Optional c As String = "", Optional m = "url") As String
+    Dim col As String
+    If c <> "" Then
+        col = "-" & c
+    Else
+        col = c
+    End If
+    If m = "url" Then
+        m = "url"
+    Else
+        m = "gprice"
+    End If
+    getItemPHP = "<?php echo $items['" & i & col & "']['" & m & "']; ?>"
+End Function
+
+Public Function getatag(Optional link As String, Optional alt As String = "") As String
+    If link <> "" Then
+        getatag = "<a href=""" & getLCBPHPLink(link) & getquerystr(link) & "ref=top_main"" title=""" & alt & """ >"
+    Else
+        getatag = "</a>"
+    End If
+End Function
+
+Public Function getquerystr(t) As String
+    If InStr(t, "php") > 0 Or InStr(t, "html") > 0 Or Right(t, 1) = "/" Then
+        getquerystr = "?"
+    Else
+        getquerystr = "&"
+    End If
+End Function
+
+Public Function getRunMaxRow(r As Integer, c As Long) As Long
+    getRunMaxRow = Cells(r, c).End(xlDown).Row
+End Function
+Public Function getRunMinRow(r As Integer, c As Long) As Long
+    getRunMinRow = Cells(r, c).End(xlUp).Row
+End Function
+Public Function getEndRow(r As Long, c As Long) As Long
+    getEndRow = Cells(Rows.count, c).End(xlUp).Row
+End Function
+
+Public Function getEndCol(r As Integer, c As Long) As Long
+    getEndCol = Cells(r, Columns.count).End(xlToLeft).Column
+End Function
+
+Public Function ひらがな()
+    ひらがな = "[ぁ-んー]+"
+End Function
+
+Public Function カタカナ()
+    カタカナ = "[ァ-ヶー]+"
+End Function
+
+Public Function 漢字()
+    漢字 = "[一-龠]+"
+End Function
+
+Public Function アルファベット()
+    アルファベット = "[A-Za-zＡ-Ｚａ-ｚ]+"
+End Function
+
+Public Function 数字()
+    数字 = "[0-9０-９,，.．]+"
+End Function
+
+Public Function textFormat(before As String, format As String) As String
+    textFormat = Application.WorksheetFunction.text(before, format)
+End Function
+
+Public Function checkStr(t) As String
+        If InStr(Replace(LCase(t), " ", ""), "shoponly") > 0 Then
+        checkStr = "shoponly"
+        ElseIf InStr(Replace(LCase(t), " ", ""), "comingsoon") > 0 Then
+        checkStr = "comingsoon"
+        ElseIf InStr(t, "参考商品") > 0 Or InStr(t, "スタイリング") > 0 Then
+        checkStr = "sankou"
+        ElseIf InStr(Replace(LCase(t), " ", ""), "outlet") > 0 Then
+        checkStr = "outlet"
+        Else
+        checkStr = "other"
+        End If
+End Function
+
+Public Function getthisfilepath() As String
+    getthisfilepath = ActiveWorkbook.path
+End Function
+
+Public Function Max(a As Long, b As Long) As Long
+    Max = IIf(a > b, a, b)
+End Function
